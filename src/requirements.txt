@@ -1,0 +1,3 @@
+PyQt6==6.9.1
+ir_datasets==0.5.10
+nltk==3.9.1
