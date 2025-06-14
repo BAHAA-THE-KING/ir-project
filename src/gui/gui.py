@@ -138,7 +138,7 @@ class IRMainWindow(QMainWindow):
             self.results_list.clear()
             
             for doc_id, score in results:
-                item = QListWidgetItem(f"Document {doc_id} (Score: {score:.2f})")
+                item = QListWidgetItem(f"Doc_ID: {doc_id}, Score: {score:.2f}")
                 item.setData(Qt.ItemDataRole.UserRole, doc_id)
                 self.results_list.addItem(item)
                 

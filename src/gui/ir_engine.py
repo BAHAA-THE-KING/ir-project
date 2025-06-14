@@ -77,14 +77,14 @@ class IREngine:
         """Get the current search model name."""
         return self.current_model.value
     
-    def search(self, query: str, top_k: int = 10) -> List[Tuple[str, float]]:
+    def search(self, query: str, top_k: int = 10) -> List[Tuple[int, float]]:
         """
         Search the current dataset using the selected model.
         Returns a list of (doc_id, score) tuples.
         """
         print(f"Searching for query: {query} using model: {self.current_model.value}")
         if (self.current_model.value=='Hybrid'):
-            return hybrid_search(query, top_k)
+            return hybrid_search(query, self.docs, self.queries, self.qrels, top_k)
         else:
             raise ValueError(f"Model {self.current_model.value} not found")
     

@@ -1,6 +1,6 @@
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
-def hybrid_search(query: str, top_k: int = 10) -> List[Tuple[str, float]]:
+def hybrid_search(query: str, docs: Dict, queries: Dict, qrels: Dict, top_k: int = 10) -> List[Tuple[str, float]]:
     """
     Performs a hybrid search combining multiple ranking methods.
     Currently returns dummy results for testing.
@@ -12,5 +12,5 @@ def hybrid_search(query: str, top_k: int = 10) -> List[Tuple[str, float]]:
     Returns:
         List of tuples containing (document_id, score)
     """
-    results = [("dummy_doc_1", 0.8), ("dummy_doc_2", 0.6)]
+    results = [(i.doc_id, 0.8) for i in docs[0:3]]
     return results[:top_k]
