@@ -1,3 +1,5 @@
 PyQt6==6.9.1
 ir_datasets==0.5.10
 nltk==3.9.1
+rank-bm25==0.2.2
+joblib==1.5.1
