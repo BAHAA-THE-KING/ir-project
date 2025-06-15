@@ -1,6 +1,6 @@
 import ir_datasets
 
-def load_dataset(name: str = "antique"):
+def load_dataset(name: str):
     dataset = ir_datasets.load(name)
     dataset_test = ir_datasets.load(name+'/test')
     
