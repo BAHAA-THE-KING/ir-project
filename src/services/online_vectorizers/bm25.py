@@ -14,8 +14,11 @@ def bm25_search(dataset_name: str, query: str, top_k: int = 10):
     # Sort the results
     top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
 
+    results = []
+
     # Display the results
-    print("\n✅ Best results:")
-    for rank, idx in enumerate(top_indices, 1):
-        # snippet = docs[idx][:80].replace("\n", " ") + ("..." if len(docs[idx]) > 80 else "")
-        print(f"{rank}. [Score: {scores[idx]:.4f}] {docs[idx]}")
+    for idx in top_indices:
+        text = docs[idx].text[:40] + "..." if len(docs[idx].text) > 40 else docs[idx].text
+        results.append((docs[idx].doc_id, scores[idx], text))
+    
+    return results

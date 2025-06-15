@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.config import DATASETS, DEFAULT_DATASET
 from src.loader import load_dataset
 from src.services.online_vectorizers.hybrid import hybrid_search
+from src.services.online_vectorizers.bm25 import bm25_search
 
 class SearchModel(Enum):
     TFIDF = "TF-IDF"
@@ -85,10 +86,15 @@ class IREngine:
         print(f"Searching for query: {query} using model: {self.current_model.value}")
         if (self.current_model.value=='Hybrid'):
             return hybrid_search(query, self.docs, self.queries, self.qrels, top_k)
+        elif (self.current_model.value=='BM25'):
+            return bm25_search(self.current_dataset, query, top_k)
         else:
             raise ValueError(f"Model {self.current_model.value} not found")
     
     def get_document(self, doc_id: str) -> Optional[str]:
         """Get the content of a specific document."""
         print(f"Getting document: {doc_id}")
-        return self.docs.get(doc_id) 
+        for doc in self.docs:
+            if doc.doc_id == doc_id:
+                return doc.text
+        return None
