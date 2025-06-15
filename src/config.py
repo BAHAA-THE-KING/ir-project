@@ -5,10 +5,10 @@ DATASETS = {
         "description": "Question-answer dataset with natural questions from real users",
         "ir_datasets_id": "antique"
     },
-    "msmarco": {
-        "name": "msmarco",
-        "description": "Large-scale passage ranking dataset from Bing queries",
-        "ir_datasets_id": "beir/msmarco"
+    "wikir": {
+        "name": "wikir",
+        "description": "Wikipedia-based information retrieval dataset with 1K articles",
+        "ir_datasets_id": "wikir/en1k"
     }
 }
 
