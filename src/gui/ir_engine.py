@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.config import DATASETS, DEFAULT_DATASET
 from src.loader import load_dataset
-from src.services.offline_vectorizers.hybrid import hybrid_search
+from src.services.online_vectorizers.hybrid import hybrid_search
 
 class SearchModel(Enum):
     TFIDF = "TF-IDF"
