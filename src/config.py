@@ -5,8 +5,8 @@ DATASETS = {
         "description": "Question-answer dataset with natural questions from real users",
         "ir_datasets_id": "antique"
     },
-    "wikir": {
-        "name": "wikir",
+    "wikir/en1k": {
+        "name": "wikir/en1k",
         "description": "Wikipedia-based information retrieval dataset with 1K articles",
         "ir_datasets_id": "wikir/en1k"
     }
