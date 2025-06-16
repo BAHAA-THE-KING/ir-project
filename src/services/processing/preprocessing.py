@@ -1,9 +1,9 @@
 import re
-import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-
+from nltk.corpus import wordnet
+from nltk import pos_tag
 class TextPreprocessor:
     def __init__(self):
         self.lemmatizer = WordNetLemmatizer()
@@ -28,13 +28,29 @@ class TextPreprocessor:
         words = word_tokenize(text)
         filtered_words = [word for word in words if word not in self.stop_words]
         return ' '.join(filtered_words)
+    
+    def get_wordnet_pos(self, tag_parameter):
+
+        tag = tag_parameter[0].upper()
+        tag_dict = {"J": wordnet.ADJ,
+                    "N": wordnet.NOUN,
+                    "V": wordnet.VERB,
+                    "R": wordnet.ADV}
+        
+        return tag_dict.get(tag, wordnet.NOUN)
 
     def lemmatize_text(self, text):
         """
         Lemmatize words to their root form
         """
+        # Tokenize into words
         words = word_tokenize(text)
-        lemmatized_words = [self.lemmatizer.lemmatize(word) for word in words]
+
+        # POS tagging
+        pos_tags = pos_tag(words)
+
+        lemmatized_words = [self.lemmatizer.lemmatize(word, pos=self.get_wordnet_pos(tag)) for word, tag in pos_tags]
+        
         return ' '.join(lemmatized_words)
 
     def preprocess_text(self, text):
@@ -48,5 +64,5 @@ class TextPreprocessor:
         text = self.clean_text(text)
         text = self.remove_stopwords(text)
         text = self.lemmatize_text(text)
-        
+
         return text.strip()

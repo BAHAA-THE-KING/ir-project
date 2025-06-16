@@ -137,8 +137,8 @@ class IRMainWindow(QMainWindow):
             results = self.ir_engine.search(query, top_k)
             self.results_list.clear()
             
-            for doc_id, score in results:
-                item = QListWidgetItem(f"Doc_ID: {doc_id}, Score: {score:.2f}")
+            for doc_id, score, text in results:
+                item = QListWidgetItem(f"Doc_ID: {doc_id}, Score: {score:.2f}, Text: {text}")
                 item.setData(Qt.ItemDataRole.UserRole, doc_id)
                 self.results_list.addItem(item)
                 
