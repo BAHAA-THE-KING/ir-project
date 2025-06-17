@@ -6,7 +6,7 @@ def bm25_train(docs, dataset_name):
     preprocessor = TextPreprocessor()
 
     # Train the model
-    bm25 = BM25Okapi([doc.text for doc in docs], tokenizer=preprocessor.preprocess_text)
+    bm25 = BM25Okapi([doc.text.split() for doc in docs], tokenizer=preprocessor.preprocess_text)
 
     # Save the model and the documents
     joblib.dump(bm25, f"data/{dataset_name}/bm25_model.joblib")
