@@ -7,7 +7,7 @@ from enum import Enum
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.config import DATASETS, DEFAULT_DATASET
-from src.loader import load_dataset
+from src.loader import load_dataset_with_queries
 from src.services.online_vectorizers.hybrid import hybrid_search
 from src.services.online_vectorizers.bm25 import bm25_search
 
@@ -34,7 +34,7 @@ class IREngine:
         if dataset_name not in DATASETS:
             raise ValueError(f"Dataset {dataset_name} not found")
         
-        self.docs, self.queries, self.qrels = load_dataset(dataset_name)
+        self.docs, self.queries, self.qrels = load_dataset_with_queries(dataset_name)
         self.current_dataset = dataset_name
         print(f"Dataset loaded successfully. Documents: {len(self.docs)}")
     

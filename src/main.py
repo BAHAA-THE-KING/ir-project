@@ -1,5 +1,5 @@
 from config import DATASETS, DEFAULT_DATASET
-from loader import load_dataset
+from loader import load_dataset,load_dataset_with_queries
 from services.online_vectorizers.bm25 import bm25_search
 from services.offline_vectorizers.bm25 import bm25_train
 from services.processing.preprocessing import TextPreprocessor
@@ -9,7 +9,7 @@ def main():
     dataset_name = DEFAULT_DATASET
        
     # Load the dataset using the loader
-    docs, queries, qrels = load_dataset(dataset_name)
+    docs, queries, qrels = load_dataset_with_queries(dataset_name)
 
     document=docs[0]
     text=document.text
