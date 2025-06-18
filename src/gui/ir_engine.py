@@ -78,7 +78,7 @@ class IREngine:
         """Get the current search model name."""
         return self.current_model.value
     
-    def search(self, query: str, top_k: int = 10) -> List[Tuple[int, float]]:
+    def search(self, query: str, top_k: int = 10) -> List[Tuple[int, float, str]]:
         """
         Search the current dataset using the selected model.
         Returns a list of (doc_id, score) tuples.

@@ -122,29 +122,24 @@ class IRMainWindow(QMainWindow):
         if not query:
             return
         
+        # Get top_k value, default to 10 if invalid
         try:
-            # Get top_k value, default to 10 if invalid
-            try:
-                top_k = int(self.top_k_input.text())
-                if top_k <= 0:
-                    raise ValueError("Top K must be positive")
-            except ValueError:
-                top_k = 10
-                self.top_k_input.setText("10")
-                self.statusBar().showMessage("Invalid Top K value, using default (10)")
-            
-            print(f"Performing search for query: {query} with top_k: {top_k}")
-            results = self.ir_engine.search(query, top_k)
-            self.results_list.clear()
-            
-            for doc_id, score, text in results:
-                item = QListWidgetItem(f"Doc_ID: {doc_id}, Score: {score:.2f}, Text: {text}")
-                item.setData(Qt.ItemDataRole.UserRole, doc_id)
-                self.results_list.addItem(item)
-                
-        except Exception as e:
-            print(f"Error performing search: {str(e)}")
-            self.statusBar().showMessage(f"Error performing search: {str(e)}")
+            top_k = int(self.top_k_input.text())
+            if top_k <= 0:
+                raise ValueError("Top K must be positive")
+        except ValueError:
+            top_k = 10
+            self.top_k_input.setText("10")
+            self.statusBar().showMessage("Invalid Top K value, using default (10)")
+        
+        print(f"Performing search for query: {query} with top_k: {top_k}")
+        results = self.ir_engine.search(query, top_k)
+        self.results_list.clear()
+        
+        for doc_id, score, text in results:
+            item = QListWidgetItem(f"Doc_ID: {doc_id}, Score: {score:.2f}, Text: {text}")
+            item.setData(Qt.ItemDataRole.UserRole, doc_id)
+            self.results_list.addItem(item)
     
     def show_document(self, item):
         try:

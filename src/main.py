@@ -2,7 +2,7 @@ from config import DATASETS, DEFAULT_DATASET
 from loader import load_dataset,load_dataset_with_queries
 from services.online_vectorizers.bm25 import bm25_search
 from services.offline_vectorizers.bm25 import bm25_train
-from services.processing.preprocessing import TextPreprocessor
+from services.processing.preprocessing import preprocess_text
 
 def main():
     # Load the default dataset
@@ -13,7 +13,7 @@ def main():
 
     document=docs[0]
     text=document.text
-    processedText = TextPreprocessor().preprocess_text(text)
+    processedText = preprocess_text(text)
 
     print(processedText)
        

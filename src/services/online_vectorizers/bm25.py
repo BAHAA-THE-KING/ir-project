@@ -1,6 +1,6 @@
 from rank_bm25 import BM25Okapi
 import joblib
-from services.processing.preprocessing import TextPreprocessor
+from services.processing.preprocessing import preprocess_text
 
 def bm25_search(dataset_name: str, query: str, top_k: int = 10):
     # Load the model and the documents
@@ -8,8 +8,7 @@ def bm25_search(dataset_name: str, query: str, top_k: int = 10):
     docs = joblib.load(f"data/{dataset_name}/docs_list.joblib")
 
     # Execute the query
-    preprocessor = TextPreprocessor()
-    query_tokens = preprocessor.preprocess_text(query).split()
+    query_tokens = preprocess_text(query).split()
     scores = bm25.get_scores(query_tokens)
 
     # Sort the results
