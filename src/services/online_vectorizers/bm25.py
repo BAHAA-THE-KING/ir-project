@@ -1,9 +1,10 @@
+from rank_bm25 import BM25Okapi
 import joblib
 from services.processing.preprocessing import TextPreprocessor
 
 def bm25_search(dataset_name: str, query: str, top_k: int = 10):
     # Load the model and the documents
-    bm25 = joblib.load(f"data/{dataset_name}/bm25_model.joblib")
+    bm25:BM25Okapi = joblib.load(f"data/{dataset_name}/bm25_model.joblib") 
     docs = joblib.load(f"data/{dataset_name}/docs_list.joblib")
 
     # Execute the query
