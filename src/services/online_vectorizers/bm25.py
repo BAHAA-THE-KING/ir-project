@@ -1,7 +1,7 @@
 import joblib
 from rank_bm25 import BM25Okapi
-from src.services.online_vectorizers.inverted_index import InvertedIndex
-from src.services.processing.preprocessing import preprocess_text
+from services.online_vectorizers.inverted_index import InvertedIndex
+from services.processing.preprocessing import preprocess_text
 
 def bm25_search(dataset_name: str, query: str, top_k: int = 10):
     # Load the model and the documents

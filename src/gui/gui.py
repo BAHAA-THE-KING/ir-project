@@ -1,15 +1,11 @@
 import sys
 import os
 
-# Add the project root directory to Python path
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, project_root)
-
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                             QHBoxLayout, QComboBox, QPushButton, QTextEdit, 
                             QLabel, QSplitter, QListWidget, QListWidgetItem, QLineEdit)
 from PyQt6.QtCore import Qt
-from src.gui.ir_engine import IREngine
+from ir_engine import IREngine
 
 class IRMainWindow(QMainWindow):
     def __init__(self):

@@ -1,8 +1,6 @@
-from src.config import DEFAULT_DATASET
-from src.loader import load_dataset_with_queries
-from src.services.online_vectorizers.bm25 import bm25_search
-from src.services.processing.preprocessing import preprocess_text
-from src.services.online_vectorizers.inverted_index import InvertedIndex
+from config import DEFAULT_DATASET
+from loader import load_dataset_with_queries
+from services.online_vectorizers.bm25 import bm25_search
 
 def main():
     # Load the default dataset

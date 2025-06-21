@@ -1,10 +1,5 @@
-import sys
-import os
 from typing import Dict, List, Tuple, Optional
 from enum import Enum
-
-# Add the parent directory to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.config import DATASETS, DEFAULT_DATASET
 from src.loader import load_dataset_with_queries
