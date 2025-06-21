@@ -64,4 +64,4 @@ def preprocess_text(text):
     text = __remove_stopwords__(text)
     text = __lemmatize_text__(text)
 
-    return text.strip()
+    return text.strip().split()

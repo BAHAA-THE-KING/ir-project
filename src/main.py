@@ -1,8 +1,8 @@
-from config import DATASETS, DEFAULT_DATASET
-from loader import load_dataset,load_dataset_with_queries
-from services.online_vectorizers.bm25 import bm25_search
-from services.offline_vectorizers.bm25 import bm25_train
-from services.processing.preprocessing import preprocess_text
+from src.config import DEFAULT_DATASET
+from src.loader import load_dataset_with_queries
+from src.services.online_vectorizers.bm25 import bm25_search
+from src.services.processing.preprocessing import preprocess_text
+from src.services.online_vectorizers.inverted_index import InvertedIndex
 
 def main():
     # Load the default dataset
@@ -10,15 +10,9 @@ def main():
        
     # Load the dataset using the loader
     docs, queries, qrels = load_dataset_with_queries(dataset_name)
-
-    document=docs[0]
-    text=document.text
-    processedText = preprocess_text(text)
-
-    print(processedText)
-       
+    
     # Search using BM25
-    # bm25_search(dataset_name, queries[2].text, 10)
+    bm25_search(dataset_name, queries[3].text, 10)
        
     # # Print query details
     # print("\nQuery:", queries[2])
