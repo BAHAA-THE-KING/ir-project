@@ -136,7 +136,8 @@ class IRMainWindow(QMainWindow):
             print(f"Performing search for query: {query} with top_k: {top_k}")
             results = self.ir_engine.search(query, top_k)
             self.results_list.clear()
-            
+            print("Search finished. Displaying results:")
+
             for doc_id, score, text in results:
                 item = QListWidgetItem(f"Doc_ID: {doc_id}, Score: {score:.2f}, Text: {text}")
                 item.setData(Qt.ItemDataRole.UserRole, doc_id)
