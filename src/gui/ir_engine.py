@@ -5,6 +5,7 @@ from src.config import DATASETS, DEFAULT_DATASET
 from src.loader import load_dataset_with_queries
 from src.services.online_vectorizers.hybrid import hybrid_search
 from src.services.online_vectorizers.bm25 import bm25_search
+from src.services.online_vectorizers.tfidf import tfidf_search
 
 class SearchModel(Enum):
     TFIDF = "TF-IDF"
@@ -83,6 +84,8 @@ class IREngine:
             return hybrid_search(query, self.docs, self.queries, self.qrels, top_k)
         elif (self.current_model.value=='BM25'):
             return bm25_search(self.current_dataset, query, top_k)
+        elif (self.current_model.value=='TF-IDF'):
+            return tfidf_search(self.current_dataset, query, top_k)
         else:
             raise ValueError(f"Model {self.current_model.value} not found")
     
