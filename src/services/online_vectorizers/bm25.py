@@ -6,23 +6,29 @@ from services.processing.preprocessing import preprocess_text
 def bm25_search(dataset_name: str, query: str, top_k: int = 10):
     # Load the model and the documents
     with open(f"data/{dataset_name}/bm25_model.dill", "rb") as f:
-        bm25:BM25Okapi = dill.load(f) 
-    # docs = dill.load(f"data/{dataset_name}/docs_list.dill")
+        bm25 : BM25Okapi = dill.load(f) 
+    with open(f"data/{dataset_name}/docs_list.dill", "rb") as f:
+        docs = dill.load(f)
     with open(f"data/{dataset_name}/inverted_index.dill", "rb") as f:
-        inverted_index:InvertedIndex = dill.load(f)
-        print(inverted_index.get_documents_sharing_terms_with_query.__code__)
+        inverted_index = InvertedIndex()
+        ii = dill.load(f)
+        inverted_index.index = ii.index
+        inverted_index.doc_lengths = ii.doc_lengths
+        inverted_index.N = ii.N
 
     # Execute the query
     query_tokens = preprocess_text(query)
     documents_sharing_terms_with_query = inverted_index.get_documents_sharing_terms_with_query(query_tokens)
     scores = bm25.get_batch_scores(query_tokens, documents_sharing_terms_with_query)
 
-    print(scores)
+    sorted_ids = sorted(enumerate(scores), key=lambda x: x[1], reverse=True)[:top_k]
+    ids = [i for i, _ in sorted_ids]
+    results = [(i, scores[i], docs[i]) for i in ids]
 
     # # Sort the results
     # top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
 
-    results = []
+    # results = []
 
     # # Display the results
     # for idx in top_indices:
