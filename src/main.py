@@ -1,6 +1,12 @@
 from config import DEFAULT_DATASET
 from loader import load_queries_and_qrels
 from services.online_vectorizers.bm25 import bm25_search
+from gui import IRMainWindow
+from PyQt6.QtWidgets import QApplication
+
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 def main():
     # Load the default dataset
@@ -10,8 +16,10 @@ def main():
     queries, qrels = load_queries_and_qrels(dataset_name)
     
     # Search using BM25
-    bm25_search(dataset_name, queries[0].text, 10)
-       
+    results=bm25_search(dataset_name, queries[0].text, 10)
+
+    print(results)
+
     # # Print query details
     # print("\nQuery:", queries[2])
        
@@ -25,3 +33,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# app = QApplication(sys.argv)
+# window = IRMainWindow()
+# window.show()
+# sys.exit(app.exec())

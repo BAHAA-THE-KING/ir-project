@@ -1,11 +1,8 @@
-import sys
-import os
-
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
+from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, 
                             QHBoxLayout, QComboBox, QPushButton, QTextEdit, 
                             QLabel, QSplitter, QListWidget, QListWidgetItem, QLineEdit)
 from PyQt6.QtCore import Qt
-from ir_engine import IREngine
+from gui.ir_engine import IREngine
 
 class IRMainWindow(QMainWindow):
     def __init__(self):
@@ -158,11 +155,3 @@ class IRMainWindow(QMainWindow):
         except Exception as e:
             print(f"Error changing model: {str(e)}")
             self.statusBar().showMessage(f"Error changing model: {str(e)}")
-
-if __name__ == "__main__":
-    print("Starting application...")
-    app = QApplication(sys.argv)
-    window = IRMainWindow()
-    window.show()
-    print("Window shown, entering event loop...")
-    sys.exit(app.exec()) 

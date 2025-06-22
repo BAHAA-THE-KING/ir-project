@@ -1,6 +1,6 @@
 import joblib
 import numpy as np
-from services.processing.preprocessing import TextPreprocessor
+from services.processing.preprocessing import preprocess_text
 from sklearn.metrics.pairwise import cosine_similarity
 
 def tfidf_search(dataset_name, query, top_k):
@@ -10,10 +10,9 @@ def tfidf_search(dataset_name, query, top_k):
     docs = joblib.load(f"data/{dataset_name}/docs_list.joblib")
     docs_tfidf_matrix = joblib.load(f"data/{dataset_name}/tfidf_matrix.joblib")
     
-    preprocessor = TextPreprocessor() # Initialize preprocessor for query
 
     # Preprocess the query using the same preprocessor
-    preprocessed_query = preprocessor.preprocess_text(query)
+    preprocessed_query = preprocess_text(query)
     # Transform the preprocessed query into a TF-IDF vector
     query_vec = vectorizer.transform([preprocessed_query])
 
