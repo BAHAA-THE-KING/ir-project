@@ -1,13 +1,16 @@
-import joblib
+import dill
 from rank_bm25 import BM25Okapi
 from services.online_vectorizers.inverted_index import InvertedIndex
 from services.processing.preprocessing import preprocess_text
 
 def bm25_search(dataset_name: str, query: str, top_k: int = 10):
     # Load the model and the documents
-    bm25:BM25Okapi = joblib.load(f"data/{dataset_name}/bm25_model.joblib") 
-    # docs = joblib.load(f"data/{dataset_name}/docs_list.joblib")
-    inverted_index = InvertedIndex.load(dataset_name)
+    with open(f"data/{dataset_name}/bm25_model.dill", "rb") as f:
+        bm25:BM25Okapi = dill.load(f) 
+    # docs = dill.load(f"data/{dataset_name}/docs_list.dill")
+    with open(f"data/{dataset_name}/inverted_index.dill", "rb") as f:
+        inverted_index:InvertedIndex = dill.load(f)
+        print(inverted_index.get_documents_sharing_terms_with_query.__code__)
 
     # Execute the query
     query_tokens = preprocess_text(query)
