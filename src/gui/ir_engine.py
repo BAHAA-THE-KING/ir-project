@@ -1,11 +1,16 @@
 from typing import Dict, List, Tuple, Optional
 from enum import Enum
+import sys
+import os
 
-from src.config import DATASETS, DEFAULT_DATASET
-from src.loader import load_dataset_with_queries
-from src.services.online_vectorizers.hybrid import hybrid_search
-from src.services.online_vectorizers.bm25 import bm25_search
-from src.services.online_vectorizers.tfidf import tfidf_search
+from config import DATASETS, DEFAULT_DATASET
+from loader import load_dataset_with_queries
+from services.online_vectorizers.hybrid import hybrid_search
+from services.online_vectorizers.bm25 import bm25_search
+from services.online_vectorizers.tfidf import tfidf_search
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 class SearchModel(Enum):
     TFIDF = "TF-IDF"
@@ -92,7 +97,4 @@ class IREngine:
     def get_document(self, doc_id: str) -> Optional[str]:
         """Get the content of a specific document."""
         print(f"Getting document: {doc_id}")
-        for doc in self.docs:
-            if doc.doc_id == doc_id:
-                return doc.text
-        return None
+        return self.docs[doc_id].text
