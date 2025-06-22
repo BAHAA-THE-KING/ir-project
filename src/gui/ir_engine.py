@@ -1,13 +1,8 @@
-import sys
-import os
 from typing import Dict, List, Tuple, Optional
 from enum import Enum
 
-# Add the parent directory to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from src.config import DATASETS, DEFAULT_DATASET
-from src.loader import load_dataset
+from src.loader import load_dataset_with_queries
 from src.services.online_vectorizers.hybrid import hybrid_search
 from src.services.online_vectorizers.bm25 import bm25_search
 from src.services.online_vectorizers.tfidf import tfidf_search
@@ -35,7 +30,7 @@ class IREngine:
         if dataset_name not in DATASETS:
             raise ValueError(f"Dataset {dataset_name} not found")
         
-        self.docs, self.queries, self.qrels = load_dataset(dataset_name)
+        self.docs, self.queries, self.qrels = load_dataset_with_queries(dataset_name)
         self.current_dataset = dataset_name
         print(f"Dataset loaded successfully. Documents: {len(self.docs)}")
     
@@ -79,7 +74,7 @@ class IREngine:
         """Get the current search model name."""
         return self.current_model.value
     
-    def search(self, query: str, top_k: int = 10) -> List[Tuple[int, float]]:
+    def search(self, query: str, top_k: int = 10) -> List[Tuple[int, float, str]]:
         """
         Search the current dataset using the selected model.
         Returns a list of (doc_id, score) tuples.
