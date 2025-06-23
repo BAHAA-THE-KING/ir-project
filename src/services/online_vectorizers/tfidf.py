@@ -11,10 +11,8 @@ def tfidf_search(dataset_name, query, top_k):
     docs_tfidf_matrix = joblib.load(f"data/{dataset_name}/tfidf_matrix.joblib")
     
 
-    # Preprocess the query using the same preprocessor
-    preprocessed_query = preprocess_text(query)
     # Transform the preprocessed query into a TF-IDF vector
-    query_vec = vectorizer.transform([preprocessed_query])
+    query_vec = vectorizer.transform([query])
 
     # Calculate cosine similarity between the query vector and the pre-computed document matrix
     cosine_sim = cosine_similarity(query_vec, docs_tfidf_matrix).flatten()
