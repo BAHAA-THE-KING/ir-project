@@ -1,22 +1,21 @@
 import os
 import joblib
 from sklearn.feature_extraction.text import TfidfVectorizer
-from services.processing.preprocessing import TextPreprocessor
+from services.processing.preprocessing import preprocess_text
 
 # --- TF-IDF Training Function ---
 def tfidf_train(docs, dataset_name):
 
-    preprocessor = TextPreprocessor()
-
-    processed_texts = [preprocessor.preprocess_text(doc.text) for doc in docs]
+    corpus = [doc.text for doc in docs]
 
     vectorizer = TfidfVectorizer(
+        analyzer=preprocess_text,
         lowercase=False,  # Handled by preprocessor
         stop_words=None   # Handled by preprocessor
     )
 
     # Train the vectorizer (fit) on the already processed document strings.
-    tfidf_matrix = vectorizer.fit_transform(processed_texts)
+    tfidf_matrix = vectorizer.fit_transform(corpus)
 
     output_dir = f"data/{dataset_name}"
     # Create the directory if it doesn't already exist
