@@ -4,7 +4,7 @@ from services.online_vectorizers.inverted_index import InvertedIndex
 from services.processing.preprocessing import preprocess_text
 from loader import load_dataset
 
-def bm25_search(dataset_name: str, query: str, top_k: int = 10, with_inverted_index: bool = False):
+def bm25_search(dataset_name: str, query: str, top_k: int = 10, with_inverted_index: bool = False) -> list[tuple[int, float, str]]:
     # Load the model and the documents
     with open(f"data/{dataset_name}/bm25_model.dill", "rb") as f:
         bm25 : BM25Okapi = dill.load(f) 
