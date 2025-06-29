@@ -4,23 +4,36 @@ from services.online_vectorizers.inverted_index import InvertedIndex
 from services.processing.bm25_preprocessing import AntiqueTextProcessor, QuoraTextProcessor
 from loader import load_dataset
 import math
+from collections import namedtuple
 
 class BM25:
+    __bm25instance__ : dict[str, BM25Okapi] = {}
+    __invertedIndex__ : dict[str, InvertedIndex] = {}
     @staticmethod
-    def bm25_search(dataset_name: str, query: str, top_k: int = 10, with_inverted_index: bool = False) -> list[tuple[int, float, str]]:
-        # Load the model and the documents
-        with open(f"data/{dataset_name}/bm25_model.dill", "rb") as f:
-            bm25 : BM25Okapi = dill.load(f) 
-        # with open(f"data/{dataset_name}/docs_list.dill", "rb") as f:
-        #     docs = dill.load(f)
-        docs=load_dataset(dataset_name)
-        if with_inverted_index:
+    def loadInstance(dataset_name : str):
+        if BM25.__bm25instance__[dataset_name] == None:
+            with open(f"data/{dataset_name}/bm25_model.dill", "rb") as f:
+                BM25.__bm25instance__[dataset_name] = dill.load(f) 
+    @staticmethod
+    def loadInvertedIndex(dataset_name : str):
+        if BM25.__invertedIndex__[dataset_name] == None:
             with open(f"data/{dataset_name}/inverted_index.dill", "rb") as f:
                 inverted_index = InvertedIndex()
                 ii = dill.load(f)
                 inverted_index.index = ii.index
                 inverted_index.doc_lengths = ii.doc_lengths
                 inverted_index.N = ii.N
+                BM25.__invertedIndex__[dataset_name] = inverted_index
+
+    @staticmethod
+    def bm25_search(dataset_name: str, query: str, top_k: int = 10, with_inverted_index: bool = False) -> list[tuple[int, float, str]]:
+        # Load the model and the documents
+        BM25.loadInstance(dataset_name)
+        bm25 = BM25.__bm25instance__[dataset_name]
+        docs = load_dataset(dataset_name)
+        if with_inverted_index:
+            BM25.loadInvertedIndex(dataset_name)
+            inverted_index = BM25.__invertedIndex__[dataset_name]
 
         # Execute the query
         if dataset_name == "antique":
