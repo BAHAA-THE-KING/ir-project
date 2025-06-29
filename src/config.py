@@ -6,11 +6,17 @@ DATASETS = {
         "ir_datasets_id": "antique",
         "ir_datasets_test_id": "antique/test"
     },
-    "wikir/en1k": {
-        "name": "wikir/en1k",
-        "description": "Wikipedia-based information retrieval dataset with 1K articles",
-        "ir_datasets_id": "wikir/en1k",
-        "ir_datasets_test_id": "wikir/en1k/test"
+    "quora": {
+        "name": "beir/quora",
+        "description": "Quora question pairs dataset from the BEIR benchmark",
+        "ir_datasets_id": "beir/quora",
+        "ir_datasets_test_id": "beir/quora/test"
+    },
+    "webis": {
+        "name": "beir/webis-touche2020/v2",
+        "description": "Webis Touché 2020 (v2) dataset from the BEIR benchmark",
+        "ir_datasets_id": "beir/webis-touche2020/v2",
+        "ir_datasets_test_id": "beir/webis-touche2020/v2"
     }
 }
 
