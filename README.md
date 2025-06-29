@@ -106,7 +106,7 @@ src/
 The system supports various datasets through ir_datasets:
 
 - **antique**: Question-answer dataset with natural questions from real users
-- **wikir/en1k**: Wikipedia-based information retrieval dataset with 1K articles
+- **beir/quora**: Quora question pairs dataset from the BEIR benchmark
 
 ## Search Models
 
@@ -115,6 +115,10 @@ Best Matching 25 (BM25) is a ranking function used by search engines to rank mat
 
 ### TF-IDF
 Term Frequency-Inverse Document Frequency is a numerical statistic that reflects how important a word is to a document in a collection.
+
+### Embedding (BERT)
+
+The system supports dense retrieval using BERT-based embeddings. Documents and queries are encoded into dense vectors using a pre-trained BERT model, and similarity is computed (typically via cosine similarity) to rank results.
 
 ### Hybrid
 Combines multiple ranking methods for improved search results.
