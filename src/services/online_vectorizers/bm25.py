@@ -97,7 +97,7 @@ class BM25_online:
                 # print(f"Qrel #{i} {qrel.relevance}: {bm25_preprocess_text(doc.text)}")
             
             DCG = [
-                calc_dcg(
+                BM25_online.calc_dcg(
                     list(
                         filter(
                             lambda qrel: qrel.doc_id == doc[0], relevant_qrels
@@ -110,7 +110,7 @@ class BM25_online:
                     , i+1
                 ) for i, doc in enumerate(results)]
             
-            iDCG = [calc_dcg(qrel.relevance, i+1) for i, qrel in enumerate(relevant_qrels[:K])]
+            iDCG = [BM25_online.calc_dcg(qrel.relevance, i+1) for i, qrel in enumerate(relevant_qrels[:K])]
             
             res = sum(DCG) 
             ires = sum(iDCG) 
