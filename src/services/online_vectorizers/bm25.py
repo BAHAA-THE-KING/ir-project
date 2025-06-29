@@ -11,12 +11,12 @@ class BM25_online:
     __invertedIndex__ : dict[str, InvertedIndex] = {}
     @staticmethod
     def loadInstance(dataset_name : str):
-        if BM25_online.__bm25instance__[dataset_name] == None:
+        if dataset_name not in BM25_online.__bm25instance__.keys():
             with open(f"data/{dataset_name}/bm25_model.dill", "rb") as f:
                 BM25_online.__bm25instance__[dataset_name] = dill.load(f) 
     @staticmethod
     def loadInvertedIndex(dataset_name : str):
-        if BM25_online.__invertedIndex__[dataset_name] == None:
+        if dataset_name not in BM25_online.__invertedIndex__.keys():
             with open(f"data/{dataset_name}/inverted_index.dill", "rb") as f:
                 inverted_index = InvertedIndex()
                 ii = dill.load(f)
