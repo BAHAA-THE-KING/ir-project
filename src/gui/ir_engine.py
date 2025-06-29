@@ -8,6 +8,8 @@ from loader import load_dataset_with_queries
 from services.online_vectorizers.hybrid import hybrid_search
 from services.online_vectorizers.bm25 import bm25_search
 from services.online_vectorizers.tfidf import tfidf_search
+from services.online_vectorizers.embedding import embedding_search
+
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -91,6 +93,8 @@ class IREngine:
             return bm25_search(self.current_dataset, query, top_k)
         elif (self.current_model.value=='TF-IDF'):
             return tfidf_search(self.current_dataset, query, top_k)
+        elif (self.current_model.value=='Embedding'):
+            return embedding_search(self.current_dataset, query, top_k)
         else:
             raise ValueError(f"Model {self.current_model.value} not found")
     
