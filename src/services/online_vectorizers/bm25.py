@@ -1,7 +1,7 @@
 import dill
 from rank_bm25 import BM25Okapi
 from services.online_vectorizers.inverted_index import InvertedIndex
-from services.processing.preprocessing import preprocess_text
+from services.processing.bm25_preprocessing import AntiqueTextProcessor, QuoraTextProcessor
 from loader import load_dataset
 import math
 
@@ -11,7 +11,7 @@ def bm25_search(dataset_name: str, query: str, top_k: int = 10, with_inverted_in
         bm25 : BM25Okapi = dill.load(f) 
     # with open(f"data/{dataset_name}/docs_list.dill", "rb") as f:
     #     docs = dill.load(f)
-    docs=load_dataset('antique')
+    docs=load_dataset(dataset_name)
     if with_inverted_index:
         with open(f"data/{dataset_name}/inverted_index.dill", "rb") as f:
             inverted_index = InvertedIndex()
@@ -21,7 +21,13 @@ def bm25_search(dataset_name: str, query: str, top_k: int = 10, with_inverted_in
             inverted_index.N = ii.N
 
     # Execute the query
-    query_tokens = preprocess_text(query)
+    if dataset_name == "antique":
+        query_tokens = AntiqueTextProcessor().preprocess_text(query)
+    elif dataset_name == "quora":
+        query_tokens = QuoraTextProcessor().preprocess_text(query)
+    else:
+        raise ValueError(f"Invalid dataset name: {dataset_name}")
+
     if with_inverted_index:
         documents_sharing_terms_with_query = inverted_index.get_documents_sharing_terms_with_query(query_tokens)
         scores = bm25.get_batch_scores(query_tokens, documents_sharing_terms_with_query)
