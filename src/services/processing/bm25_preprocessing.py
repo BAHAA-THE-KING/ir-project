@@ -8,7 +8,8 @@ from nltk.tokenize import word_tokenize
 class AntiqueTextProcessor:
     __lemmatizer__ = WordNetLemmatizer()
 
-    def __clean_text__(self, text):
+    @staticmethod
+    def __clean_text__(text):
         """
         Clean text by removing special characters and converting to lowercase
         """
@@ -21,7 +22,8 @@ class AntiqueTextProcessor:
         
         return text
 
-    def __get_wordnet_pos__(self, tag_parameter):
+    @staticmethod
+    def __get_wordnet_pos__(tag_parameter):
         tag = tag_parameter[0].upper()
         tag_dict = {
             "J": wordnet.ADJ,
@@ -31,7 +33,8 @@ class AntiqueTextProcessor:
             }
         return tag_dict.get(tag, wordnet.NOUN)
 
-    def __lemmatize_text__(self, text):
+    @staticmethod
+    def __lemmatize_text__(text):
         """
         Lemmatize words to their root form
         """
@@ -41,11 +44,12 @@ class AntiqueTextProcessor:
         # POS tagging
         pos_tags = pos_tag(words)
 
-        lemmatized_words = [self.__lemmatizer__.lemmatize(word, pos=self.__get_wordnet_pos__(tag)) for word, tag in pos_tags]
+        lemmatized_words = [AntiqueTextProcessor.__lemmatizer__.lemmatize(word, pos=AntiqueTextProcessor.__get_wordnet_pos__(tag)) for word, tag in pos_tags]
 
         return ' '.join(lemmatized_words)
 
-    def preprocess_text(self, text):
+    @staticmethod
+    def preprocess_text(text):
         """
         Apply full preprocessing pipeline
         """
@@ -53,8 +57,8 @@ class AntiqueTextProcessor:
             return ""
         
         # Apply all preprocessing steps
-        text = self.__clean_text__(text)
-        text = self.__lemmatize_text__(text)
+        text = AntiqueTextProcessor.__clean_text__(text)
+        text = AntiqueTextProcessor.__lemmatize_text__(text)
         text = word_tokenize(text.strip())
 
         return text
@@ -63,7 +67,8 @@ class QuoraTextProcessor:
     __lemmatizer__ = WordNetLemmatizer()
     __stop_words__ = set(stopwords.words('english'))
 
-    def __clean_text__(self, text):
+    @staticmethod
+    def __clean_text__(text):
         """
         Clean text by removing special characters and converting to lowercase
         """
@@ -78,15 +83,17 @@ class QuoraTextProcessor:
         
         return text
 
-    def __remove_stopwords__(self, text):
+    @staticmethod
+    def __remove_stopwords__(text):
         """
         Remove common stopwords from text
         """
         words = word_tokenize(text)
-        filtered_words = [word for word in words if word not in self.__stop_words__]
+        filtered_words = [word for word in words if word not in QuoraTextProcessor.__stop_words__]
         return ' '.join(filtered_words)
 
-    def __get_wordnet_pos__(self, tag_parameter):
+    @staticmethod
+    def __get_wordnet_pos__(tag_parameter):
         tag = tag_parameter[0].upper()
         tag_dict = {
             "J": wordnet.ADJ,
@@ -96,7 +103,8 @@ class QuoraTextProcessor:
             }
         return tag_dict.get(tag, wordnet.NOUN)
 
-    def __lemmatize_text__(self, text):
+    @staticmethod
+    def __lemmatize_text__(text):
         """
         Lemmatize words to their root form
         """
@@ -106,11 +114,12 @@ class QuoraTextProcessor:
         # POS tagging
         pos_tags = pos_tag(words)
 
-        lemmatized_words = [self.__lemmatizer__.lemmatize(word, pos=self.__get_wordnet_pos__(tag)) for word, tag in pos_tags]
+        lemmatized_words = [QuoraTextProcessor.__lemmatizer__.lemmatize(word, pos=QuoraTextProcessor.__get_wordnet_pos__(tag)) for word, tag in pos_tags]
 
         return ' '.join(lemmatized_words)
 
-    def preprocess_text(self, text):
+    @staticmethod
+    def preprocess_text(text):
         """
         Apply full preprocessing pipeline
         """
@@ -118,8 +127,8 @@ class QuoraTextProcessor:
             return ""
         
         # Apply all preprocessing steps
-        text = self.__clean_text__(text)
-        text = self.__remove_stopwords__(text)
-        text = self.__lemmatize_text__(text)
+        text = QuoraTextProcessor.__clean_text__(text)
+        text = QuoraTextProcessor.__remove_stopwords__(text)
+        text = QuoraTextProcessor.__lemmatize_text__(text)
 
         return text.strip().split()
