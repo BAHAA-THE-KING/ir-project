@@ -5,9 +5,3 @@ This module contains offline vectorization services that train and save models
 for information retrieval tasks. These models are trained once and then used
 for online search operations.
 """
-
-from .bm25 import bm25_train
-
-__all__ = [
-    'bm25_train'
-] 
