@@ -45,34 +45,43 @@ def bm25_search(dataset_name: str, query: str, top_k: int = 10, with_inverted_in
     # Display the results
     if with_inverted_index:
         for elm in top_indices:
-            text = docs[elm[1]].text[:40] + "..." if len(docs[elm[1]].text) > 40 else docs[elm[1]].text
+            text = docs[elm[1]].text
             results.append((docs[elm[1]].doc_id, scores[elm[0]], text))
     else:
         for idx in top_indices:
-            text = docs[idx].text[:40] + "..." if len(docs[idx].text) > 40 else docs[idx].text
+            text = docs[idx].text
             results.append((docs[idx].doc_id, scores[idx], text))
     
     return results
 
 
-def ndcj(reli, rank):
-    return ((2 ** reli) - 1) / math.log10(rank + 1)
+def calc_dcg(rel, rank):
+    return ((2 ** rel) - 1) / math.log10(rank + 1)
 
-def evaluate_bm25(dataset_name, queries, qrels):
-    NDCG = []
+def evaluate_bm25(dataset_name, queries, qrels, K = 10):
+    nDCG = []
 
     for i in range(len(queries)):
         query = queries[i]
+        # print(f"Query: {query.text}")
+        # print(f"Query: {bm25_preprocess_text(query.text)}")
         
         # Search using BM25
-        results=bm25_search(dataset_name, query.text, 37, True)
+        results = bm25_search(dataset_name, query.text, K, True)
+        # for i, res in enumerate(results):
+            # print(f"Result #{i} {res[1]}: {res[2]}")
+            # print(f"Result #{i} {res[1]}: {bm25_preprocess_text(res[2])}")
 
         # Find relevant documents for this query
         relevant_qrels = [qrel for qrel in qrels if qrel.query_id == query.query_id]
         relevant_qrels = sorted(relevant_qrels, key=lambda x: x.relevance, reverse=True)
+        # for i, qrel in enumerate(relevant_qrels[:K]):
+        #     doc = [doc for doc in docs if qrel.doc_id == doc.doc_id][0]
+            # print(f"Qrel #{i} {qrel.relevance}: {doc.text}")
+            # print(f"Qrel #{i} {qrel.relevance}: {bm25_preprocess_text(doc.text)}")
         
-        nDCG = [
-            ndcj(
+        DCG = [
+            calc_dcg(
                 list(
                     filter(
                         lambda qrel: qrel.doc_id == doc[0], relevant_qrels
@@ -85,17 +94,16 @@ def evaluate_bm25(dataset_name, queries, qrels):
                 , i+1
             ) for i, doc in enumerate(results)]
         
-        iDCG = [ndcj(qrel.relevance, i+1) for i, qrel in enumerate(relevant_qrels)]
+        iDCG = [calc_dcg(qrel.relevance, i+1) for i, qrel in enumerate(relevant_qrels[:K])]
         
-        res = sum(nDCG) 
+        res = sum(DCG) 
         ires = sum(iDCG) 
         
         print("")
         print(f"query: {i}")
-        print(f"query: {i}")
         print(f"nDCG: {res}")
         print(f"iDCG: {ires}")
-        print(f"NDCG: {res/ires*100}%")
-        NDCG.append(res/ires)
+        print(f"nDCG: {res/ires*100}%")
+        nDCG.append(res/ires)
     
-    print(f"Average NDCG: {sum(NDCG)/len(NDCG)*100}%")
+    print(f"Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
