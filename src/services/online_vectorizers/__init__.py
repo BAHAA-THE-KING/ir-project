@@ -5,10 +5,10 @@ This module contains online vectorization services that perform real-time
 search operations using pre-trained models.
 """
 
-from .bm25 import bm25_search
+from .bm25 import BM25_online
 from .hybrid import hybrid_search
 from .inverted_index import InvertedIndex
-from .embedding import embedding_search
+from .embedding import Embedding_online
 
 
 __all__ = [

@@ -1,19 +1,14 @@
 from config import DEFAULT_DATASET
-from loader import load_dataset_with_queries, load_queries_and_qrels
-from services.offline_vectorizers.tfidf import tfidf_train
-from services.online_vectorizers.tfidf import tfidf_search
-from services.online_vectorizers.bm25 import BM25_online
-from gui.gui import IRMainWindow
-from PyQt6.QtWidgets import QApplication
-
+from loader import load_dataset_with_queries
+from services.online_vectorizers.embedding import Embedding_online
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     
 
 def main():
-    docs, queries, qrels = load_dataset_with_queries('quora')
-    BM25_online.evaluate_bm25('quora',queries, qrels)
+    docs, queries, qrels = load_dataset_with_queries('antique')
+    Embedding_online.evaluate_embedding('antique',queries, qrels)
     
 
 if __name__ == "__main__":
