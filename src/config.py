@@ -11,6 +11,12 @@ DATASETS = {
         "description": "Quora question pairs dataset from the BEIR benchmark",
         "ir_datasets_id": "beir/quora",
         "ir_datasets_test_id": "beir/quora/test"
+    },
+    "webis": {
+        "name": "beir/webis-touche2020/v2",
+        "description": "Webis Touché 2020 (v2) dataset from the BEIR benchmark",
+        "ir_datasets_id": "beir/webis-touche2020/v2",
+        "ir_datasets_test_id": "beir/webis-touche2020/v2"
     }
 }
 
