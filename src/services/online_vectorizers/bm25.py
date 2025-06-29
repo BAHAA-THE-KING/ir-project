@@ -1,10 +1,10 @@
+import math
 import dill
 from rank_bm25 import BM25Okapi
-from services.online_vectorizers.inverted_index import InvertedIndex
-from services.processing.bm25_preprocessing import AntiqueTextProcessor, QuoraTextProcessor
 from loader import load_dataset
-import math
-from collections import namedtuple
+from services.online_vectorizers.inverted_index import InvertedIndex
+from services.processing.bm25_preprocessing import AntiqueTextProcessor, QuoraTextProcessor, WebisTextProcessor, RecreationTextProcessor, WikirTextProcessor
+
 
 class BM25_online:
     __bm25instance__ : dict[str, BM25Okapi] = {}
@@ -40,6 +40,12 @@ class BM25_online:
             query_tokens = AntiqueTextProcessor.preprocess_text(query)
         elif dataset_name == "quora":
             query_tokens = QuoraTextProcessor.preprocess_text(query)
+        elif dataset_name == "webis":
+            query_tokens = WebisTextProcessor.preprocess_text(query)
+        elif dataset_name == "recreation":
+            query_tokens = RecreationTextProcessor.preprocess_text(query)
+        elif dataset_name == "wikir":
+            query_tokens = WikirTextProcessor.preprocess_text(query)
         else:
             raise ValueError(f"Invalid dataset name: {dataset_name}")
 
@@ -74,27 +80,39 @@ class BM25_online:
         return ((2 ** rel) - 1) / math.log10(rank + 1)
 
     @staticmethod
-    def evaluate_bm25(dataset_name, queries, qrels, K = 10):
+    def evaluate_bm25(dataset_name, queries, qrels, docs, K = 10):
         nDCG = []
 
         for i in range(len(queries)):
             query = queries[i]
+            # if dataset_name == "antique":
+            #     bm25_preprocess_text = AntiqueTextProcessor.preprocess_text
+            # elif dataset_name == "quora":
+            #     bm25_preprocess_text = QuoraTextProcessor.preprocess_text
+            # elif dataset_name == "webis":
+            #     bm25_preprocess_text = WebisTextProcessor.preprocess_text
+            # elif dataset_name == "recreation":
+            #     bm25_preprocess_text = RecreationTextProcessor.preprocess_text
+            # elif dataset_name == "wikir":
+            #     bm25_preprocess_text = WikirTextProcessor.preprocess_text
+            # else:
+            #     raise ValueError(f"Invalid dataset name: {dataset_name}")
             # print(f"Query: {query.text}")
             # print(f"Query: {bm25_preprocess_text(query.text)}")
             
             # Search using BM25
             results = BM25_online.bm25_search(dataset_name, query.text, K, True)
             # for i, res in enumerate(results):
-                # print(f"Result #{i} {res[1]}: {res[2]}")
-                # print(f"Result #{i} {res[1]}: {bm25_preprocess_text(res[2])}")
+            #     print(f"Result #{i} {res[1]}: {res[2]}")
+            #  print(f"Result #{i} {res[1]}: {bm25_preprocess_text(res[2])}")
 
             # Find relevant documents for this query
             relevant_qrels = [qrel for qrel in qrels if qrel.query_id == query.query_id]
             relevant_qrels = sorted(relevant_qrels, key=lambda x: x.relevance, reverse=True)
             # for i, qrel in enumerate(relevant_qrels[:K]):
             #     doc = [doc for doc in docs if qrel.doc_id == doc.doc_id][0]
-                # print(f"Qrel #{i} {qrel.relevance}: {doc.text}")
-                # print(f"Qrel #{i} {qrel.relevance}: {bm25_preprocess_text(doc.text)}")
+            #     print(f"Qrel #{i} {qrel.relevance}: {doc.text}")
+            #     print(f"Qrel #{i} {qrel.relevance}: {bm25_preprocess_text(doc.text)}")
             
             DCG = [
                 BM25_online.calc_dcg(

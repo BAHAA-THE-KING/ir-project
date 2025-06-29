@@ -1,7 +1,7 @@
 import os
 import dill
 from rank_bm25 import BM25Okapi
-from services.processing.bm25_preprocessing import AntiqueTextProcessor, QuoraTextProcessor
+from services.processing.bm25_preprocessing import AntiqueTextProcessor, QuoraTextProcessor, WebisTextProcessor, RecreationTextProcessor, WikirTextProcessor
 
 class BM25_offline:
     @staticmethod
@@ -10,6 +10,12 @@ class BM25_offline:
             preprocess_text = AntiqueTextProcessor.preprocess_text
         elif dataset_name == 'quora':
             preprocess_text = QuoraTextProcessor.preprocess_text
+        elif dataset_name == "webis":
+            preprocess_text = WebisTextProcessor.preprocess_text
+        elif dataset_name == "recreation":
+            preprocess_text = RecreationTextProcessor.preprocess_text
+        elif dataset_name == "wikir":
+            preprocess_text = WikirTextProcessor.preprocess_text
         else:
             raise ValueError(f"Invalid dataset name: {dataset_name}")
 
