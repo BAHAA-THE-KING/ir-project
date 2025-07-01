@@ -32,6 +32,8 @@ def main():
     print("-" * 60)
 
 
+    docs, queries, qrels = load_dataset_with_queries('quora')
+    Embedding_online.evaluate_embedding('quora',queries, qrels)
     
 
 if __name__ == "__main__":
