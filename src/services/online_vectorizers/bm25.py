@@ -11,12 +11,12 @@ class BM25_online(Retriever):
     __bm25instance__ : dict[str, BM25Okapi] = {}
     __invertedIndex__ : dict[str, InvertedIndex] = {}
     @staticmethod
-    def __loadInstance__(self, dataset_name : str):
+    def __loadInstance__(dataset_name : str):
         if dataset_name not in BM25_online.__bm25instance__.keys():
             with open(f"data/{dataset_name}/bm25_model.dill", "rb") as f:
                 BM25_online.__bm25instance__[dataset_name] = dill.load(f) 
     @staticmethod
-    def __loadInvertedIndex__(self, dataset_name : str):
+    def __loadInvertedIndex__(dataset_name : str):
         if dataset_name not in BM25_online.__invertedIndex__.keys():
             with open(f"data/{dataset_name}/inverted_index.dill", "rb") as f:
                 inverted_index = InvertedIndex()
@@ -26,7 +26,7 @@ class BM25_online(Retriever):
                 inverted_index.N = ii.N
                 BM25_online.__invertedIndex__[dataset_name] = inverted_index
 
-    def search(self, dataset_name: str, query: str, top_k: int = 10, with_inverted_index: bool = True) -> list[tuple[int, float, str]]:
+    def search(self, dataset_name: str, query: str, top_k: int = 10, with_inverted_index: bool = True) -> list[tuple[str, float, str]]:
         # Load the model and the documents
         BM25_online.__loadInstance__(dataset_name)
         bm25 = BM25_online.__bm25instance__[dataset_name]

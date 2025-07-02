@@ -14,20 +14,20 @@ class Embedding_online(Retriever):
     __modelInstance__  = None
 
     @staticmethod
-    def __loadModelInstance__(self):
+    def __loadModelInstance__():
         if Embedding_online.__modelInstance__ == None:
             Embedding_online.__modelInstance__ = SentenceTransformer("data/models/all-MiniLM-L6-v2") 
         return Embedding_online.__modelInstance__
 
     @staticmethod
-    def __loadInstance__(self, dataset_name : str):
+    def __loadInstance__(dataset_name : str):
         if dataset_name not in Embedding_online.__embeddingInstance__.keys():
             with open(f"data/{dataset_name}/bert_embeddings.npy", "rb") as f:
                 Embedding_online.__embeddingInstance__[dataset_name] = np.load(f)
         return Embedding_online.__embeddingInstance__[dataset_name]
 
     @staticmethod
-    def __get_collection__(self, dataset_name: str):
+    def __get_collection__(dataset_name: str):
         if dataset_name not in Embedding_online.__collection_instance__:
             print(f"Connecting to ChromaDB and getting collection: {dataset_name}_embeddings...")
             client = chromadb.PersistentClient(path="chroma_db")
