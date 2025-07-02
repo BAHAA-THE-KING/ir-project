@@ -3,7 +3,7 @@ import dill
 from rank_bm25 import BM25Okapi
 from loader import load_dataset
 from services.online_vectorizers.inverted_index import InvertedIndex
-from services.processing.bm25_preprocessing import AntiqueTextProcessor, QuoraTextProcessor, WebisTextProcessor, RecreationTextProcessor, WikirTextProcessor
+from services.processing.preprocessing import preprocess_text
 
 
 class BM25_online:
@@ -36,18 +36,7 @@ class BM25_online:
             inverted_index = BM25_online.__invertedIndex__[dataset_name]
 
         # Execute the query
-        if dataset_name == "antique":
-            query_tokens = AntiqueTextProcessor.preprocess_text(query)
-        elif dataset_name == "quora":
-            query_tokens = QuoraTextProcessor.preprocess_text(query)
-        elif dataset_name == "webis":
-            query_tokens = WebisTextProcessor.preprocess_text(query)
-        elif dataset_name == "recreation":
-            query_tokens = RecreationTextProcessor.preprocess_text(query)
-        elif dataset_name == "wikir":
-            query_tokens = WikirTextProcessor.preprocess_text(query)
-        else:
-            raise ValueError(f"Invalid dataset name: {dataset_name}")
+        query_tokens = preprocess_text(query)
 
         if with_inverted_index:
             documents_sharing_terms_with_query = inverted_index.get_documents_sharing_terms_with_query(query_tokens)
@@ -85,18 +74,7 @@ class BM25_online:
 
         for i in range(len(queries)):
             query = queries[i]
-            # if dataset_name == "antique":
-            #     bm25_preprocess_text = AntiqueTextProcessor.preprocess_text
-            # elif dataset_name == "quora":
-            #     bm25_preprocess_text = QuoraTextProcessor.preprocess_text
-            # elif dataset_name == "webis":
-            #     bm25_preprocess_text = WebisTextProcessor.preprocess_text
-            # elif dataset_name == "recreation":
-            #     bm25_preprocess_text = RecreationTextProcessor.preprocess_text
-            # elif dataset_name == "wikir":
-            #     bm25_preprocess_text = WikirTextProcessor.preprocess_text
-            # else:
-            #     raise ValueError(f"Invalid dataset name: {dataset_name}")
+            # bm25_preprocess_text = preprocess_text
             # print(f"Query: {query.text}")
             # print(f"Query: {bm25_preprocess_text(query.text)}")
             
