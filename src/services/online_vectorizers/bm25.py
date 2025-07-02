@@ -4,18 +4,19 @@ from rank_bm25 import BM25Okapi
 from loader import load_dataset
 from services.online_vectorizers.inverted_index import InvertedIndex
 from services.processing.preprocessing import preprocess_text
+from services.online_vectorizers.Retriever import Retriever
 
 
-class BM25_online:
+class BM25_online(Retriever):
     __bm25instance__ : dict[str, BM25Okapi] = {}
     __invertedIndex__ : dict[str, InvertedIndex] = {}
     @staticmethod
-    def loadInstance(dataset_name : str):
+    def __loadInstance__(self, dataset_name : str):
         if dataset_name not in BM25_online.__bm25instance__.keys():
             with open(f"data/{dataset_name}/bm25_model.dill", "rb") as f:
                 BM25_online.__bm25instance__[dataset_name] = dill.load(f) 
     @staticmethod
-    def loadInvertedIndex(dataset_name : str):
+    def __loadInvertedIndex__(self, dataset_name : str):
         if dataset_name not in BM25_online.__invertedIndex__.keys():
             with open(f"data/{dataset_name}/inverted_index.dill", "rb") as f:
                 inverted_index = InvertedIndex()
@@ -25,14 +26,13 @@ class BM25_online:
                 inverted_index.N = ii.N
                 BM25_online.__invertedIndex__[dataset_name] = inverted_index
 
-    @staticmethod
-    def bm25_search(dataset_name: str, query: str, top_k: int = 10, with_inverted_index: bool = False) -> list[tuple[int, float, str]]:
+    def search(self, dataset_name: str, query: str, top_k: int = 10, with_inverted_index: bool = True) -> list[tuple[int, float, str]]:
         # Load the model and the documents
-        BM25_online.loadInstance(dataset_name)
+        BM25_online.__loadInstance__(dataset_name)
         bm25 = BM25_online.__bm25instance__[dataset_name]
         docs = load_dataset(dataset_name)
         if with_inverted_index:
-            BM25_online.loadInvertedIndex(dataset_name)
+            BM25_online.__loadInvertedIndex__(dataset_name)
             inverted_index = BM25_online.__invertedIndex__[dataset_name]
 
         # Execute the query
@@ -63,60 +63,3 @@ class BM25_online:
                 results.append((docs[idx].doc_id, scores[idx], text))
         
         return results
-
-    @staticmethod
-    def calc_dcg(rel, rank):
-        return ((2 ** rel) - 1) / math.log10(rank + 1)
-
-    @staticmethod
-    def evaluate_bm25(dataset_name, queries, qrels, docs, K = 10):
-        nDCG = []
-
-        for i in range(len(queries)):
-            query = queries[i]
-            # bm25_preprocess_text = preprocess_text
-            # print(f"Query: {query.text}")
-            # print(f"Query: {bm25_preprocess_text(query.text)}")
-            
-            # Search using BM25
-            results = BM25_online.bm25_search(dataset_name, query.text, K, True)
-            # for i, res in enumerate(results):
-            #     print(f"Result #{i} {res[1]}: {res[2]}")
-            #  print(f"Result #{i} {res[1]}: {bm25_preprocess_text(res[2])}")
-
-            # Find relevant documents for this query
-            relevant_qrels = [qrel for qrel in qrels if qrel.query_id == query.query_id]
-            relevant_qrels = sorted(relevant_qrels, key=lambda x: x.relevance, reverse=True)
-            # for i, qrel in enumerate(relevant_qrels[:K]):
-            #     doc = [doc for doc in docs if qrel.doc_id == doc.doc_id][0]
-            #     print(f"Qrel #{i} {qrel.relevance}: {doc.text}")
-            #     print(f"Qrel #{i} {qrel.relevance}: {bm25_preprocess_text(doc.text)}")
-            
-            DCG = [
-                BM25_online.calc_dcg(
-                    list(
-                        filter(
-                            lambda qrel: qrel.doc_id == doc[0], relevant_qrels
-                            )
-                        )[0].relevance if list(
-                        filter(
-                            lambda qrel: qrel.doc_id == doc[0], relevant_qrels
-                            )
-                        ) else 0
-                    , i+1
-                ) for i, doc in enumerate(results)]
-            
-            iDCG = [BM25_online.calc_dcg(qrel.relevance, i+1) for i, qrel in enumerate(relevant_qrels[:K])]
-            
-            res = sum(DCG) 
-            ires = sum(iDCG) 
-            
-            print("")
-            print(f"query: {i+1}/{len(queries)}")
-            print(f"nDCG: {res}")
-            print(f"iDCG: {ires}")
-            print(f"nDCG: {res/ires*100}%")
-            nDCG.append(res/ires)
-            print(f"Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
-        
-        print(f"Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
