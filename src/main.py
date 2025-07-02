@@ -4,6 +4,7 @@ from config import DEFAULT_DATASET
 from loader import load_dataset_with_queries
 # from services.online_vectorizers.embedding import Embedding_online
 from services.processing.preprocessing import preprocess_text
+
 import sys
 import os
 from services.online_vectorizers.tfidf import tfidf_search

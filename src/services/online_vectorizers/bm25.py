@@ -1,10 +1,10 @@
+import math
 import dill
 from rank_bm25 import BM25Okapi
-from services.online_vectorizers.inverted_index import InvertedIndex
-from services.processing.bm25_preprocessing import AntiqueTextProcessor, QuoraTextProcessor
 from loader import load_dataset
-import math
-from collections import namedtuple
+from services.online_vectorizers.inverted_index import InvertedIndex
+from services.processing.preprocessing import preprocess_text
+
 
 class BM25_online:
     __bm25instance__ : dict[str, BM25Okapi] = {}
@@ -36,12 +36,7 @@ class BM25_online:
             inverted_index = BM25_online.__invertedIndex__[dataset_name]
 
         # Execute the query
-        if dataset_name == "antique":
-            query_tokens = AntiqueTextProcessor.preprocess_text(query)
-        elif dataset_name == "quora":
-            query_tokens = QuoraTextProcessor.preprocess_text(query)
-        else:
-            raise ValueError(f"Invalid dataset name: {dataset_name}")
+        query_tokens = preprocess_text(query)
 
         if with_inverted_index:
             documents_sharing_terms_with_query = inverted_index.get_documents_sharing_terms_with_query(query_tokens)
@@ -74,27 +69,28 @@ class BM25_online:
         return ((2 ** rel) - 1) / math.log10(rank + 1)
 
     @staticmethod
-    def evaluate_bm25(dataset_name, queries, qrels, K = 10):
+    def evaluate_bm25(dataset_name, queries, qrels, docs, K = 10):
         nDCG = []
 
         for i in range(len(queries)):
             query = queries[i]
+            # bm25_preprocess_text = preprocess_text
             # print(f"Query: {query.text}")
             # print(f"Query: {bm25_preprocess_text(query.text)}")
             
             # Search using BM25
             results = BM25_online.bm25_search(dataset_name, query.text, K, True)
             # for i, res in enumerate(results):
-                # print(f"Result #{i} {res[1]}: {res[2]}")
-                # print(f"Result #{i} {res[1]}: {bm25_preprocess_text(res[2])}")
+            #     print(f"Result #{i} {res[1]}: {res[2]}")
+            #  print(f"Result #{i} {res[1]}: {bm25_preprocess_text(res[2])}")
 
             # Find relevant documents for this query
             relevant_qrels = [qrel for qrel in qrels if qrel.query_id == query.query_id]
             relevant_qrels = sorted(relevant_qrels, key=lambda x: x.relevance, reverse=True)
             # for i, qrel in enumerate(relevant_qrels[:K]):
             #     doc = [doc for doc in docs if qrel.doc_id == doc.doc_id][0]
-                # print(f"Qrel #{i} {qrel.relevance}: {doc.text}")
-                # print(f"Qrel #{i} {qrel.relevance}: {bm25_preprocess_text(doc.text)}")
+            #     print(f"Qrel #{i} {qrel.relevance}: {doc.text}")
+            #     print(f"Qrel #{i} {qrel.relevance}: {bm25_preprocess_text(doc.text)}")
             
             DCG = [
                 BM25_online.calc_dcg(
@@ -116,10 +112,11 @@ class BM25_online:
             ires = sum(iDCG) 
             
             print("")
-            print(f"query: {i}")
+            print(f"query: {i+1}/{len(queries)}")
             print(f"nDCG: {res}")
             print(f"iDCG: {ires}")
             print(f"nDCG: {res/ires*100}%")
             nDCG.append(res/ires)
+            print(f"Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
         
         print(f"Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
