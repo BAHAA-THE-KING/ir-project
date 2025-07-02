@@ -1,3 +1,4 @@
+import chromadb
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import joblib
@@ -29,3 +30,38 @@ def embedding_train(docs, dataset_name):
     joblib.dump(docs, docs_list_path)
     print(f"Embeddings model generated and saved to {embedding_path}")
     print(f"Documents list saved to {docs_list_path}")
+
+
+
+def populate_vector_store(docs, dataset_name):
+    print("--- Starting to Populate Vector Store ---")
+    model_path = 'models/all-MiniLM-L6-v2'
+    print(f"Loading model from: {model_path}...")
+    model = SentenceTransformer(model_path)
+    preprocessor = TextPreprocessor()
+    print("Preprocessing texts...")
+    doc_texts = [preprocessor.preprocess_for_bert(doc.text) for doc in docs]
+
+    print("Generating embeddings")
+    embeddings = model.encode(doc_texts, show_progress_bar=True)
+
+
+    client = chromadb.PersistentClient(path="chroma_db")
+    
+    collection = client.get_or_create_collection(name=f"{dataset_name}_embeddings")
+    
+    doc_ids = [doc.doc_id for doc in docs]
+    metadatas = [{'text': doc.text} for doc in docs]
+
+    batch_size = 5000
+    print(f"Adding {len(doc_ids)} documents to Chroma collection in batches of {batch_size}...")
+    for i in range(0, len(doc_ids), batch_size):
+        collection.add(
+            ids=doc_ids[i:i+batch_size],
+            embeddings=embeddings[i:i+batch_size].tolist(), 
+            metadatas=metadatas[i:i+batch_size]
+        )
+        print(f"Added batch {i//batch_size + 1}...")
+
+    print("Vector store populated successfully!")
+    print(f"Total items in collection: {collection.count()}")
