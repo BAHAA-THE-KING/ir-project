@@ -112,10 +112,11 @@ class BM25_online:
             ires = sum(iDCG) 
             
             print("")
-            print(f"query: {i}")
+            print(f"query: {i+1}/{len(queries)}")
             print(f"nDCG: {res}")
             print(f"iDCG: {ires}")
             print(f"nDCG: {res/ires*100}%")
             nDCG.append(res/ires)
+            print(f"Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
         
         print(f"Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
