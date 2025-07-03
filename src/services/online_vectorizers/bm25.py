@@ -3,7 +3,7 @@ import dill
 from rank_bm25 import BM25Okapi
 from loader import load_dataset
 from services.online_vectorizers.inverted_index import InvertedIndex
-from services.processing.preprocessing import preprocess_text
+from services.processing.text_preprocessor import TextPreprocessor
 from services.online_vectorizers.Retriever import Retriever
 
 
@@ -36,7 +36,7 @@ class BM25_online(Retriever):
             inverted_index = BM25_online.__invertedIndex__[dataset_name]
 
         # Execute the query
-        query_tokens = preprocess_text(query)
+        query_tokens = TextPreprocessor.getInstance().preprocess_text(query)
 
         if with_inverted_index:
             documents_sharing_terms_with_query = inverted_index.get_documents_sharing_terms_with_query(query_tokens)

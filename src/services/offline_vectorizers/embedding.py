@@ -2,7 +2,7 @@ import chromadb
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import joblib
-from services.processing.preprocessing import TextPreprocessor
+from services.processing.text_preprocessor import TextPreprocessor
 import os
 
 def download_bert():

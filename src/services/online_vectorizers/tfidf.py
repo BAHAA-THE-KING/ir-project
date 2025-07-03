@@ -2,7 +2,7 @@ import time
 import dill
 import joblib
 import numpy as np
-from services.processing.preprocessing import preprocess_text
+from services.processing.text_preprocessor import TextPreprocessor
 from sklearn.metrics.pairwise import cosine_similarity
 from services.online_vectorizers.Retriever import Retriever
 from services.online_vectorizers.inverted_index import InvertedIndex
