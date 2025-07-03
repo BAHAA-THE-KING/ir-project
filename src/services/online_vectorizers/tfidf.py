@@ -48,7 +48,7 @@ class TFIDF_online(Retriever):
         query_vec = vectorizer.transform([query])
         
         if(with_index):
-            tokenized_query = preprocess_text(query)
+            tokenized_query = TextPreprocessor.getInstance().preprocess_text(query)
             candidate_indices = inverted_index.get_documents_sharing_terms_with_query(tokenized_query)   
             docs_tfidf_matrix = docs_tfidf_matrix[candidate_indices]
 
