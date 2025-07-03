@@ -2,7 +2,7 @@ import time
 import dill
 import joblib
 import numpy as np
-from services.processing.preprocessing import preprocess_text
+from services.processing.text_preprocessor import TextPreprocessor
 from sklearn.metrics.pairwise import cosine_similarity
 
 from services.online_vectorizers.inverted_index import InvertedIndex
@@ -24,7 +24,7 @@ def tfidf_search(dataset_name, query, top_k, with_index = False):
     # Transform the preprocessed query into a TF-IDF vector
     query_vec = vectorizer.transform([query])
     
-    tokenized_query = preprocess_text(query)
+    tokenized_query = TextPreprocessor.getInstance().preprocess_text(query)
     
     if(with_index):
         candidate_indices = inverted_index.get_documents_sharing_terms_with_query(

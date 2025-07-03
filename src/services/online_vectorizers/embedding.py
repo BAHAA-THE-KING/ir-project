@@ -5,7 +5,7 @@ import numpy as np
 import torch 
 from loader import load_dataset
 from sentence_transformers import SentenceTransformer
-from services.processing.preprocessing import preprocess_text
+from services.processing.text_preprocessor import TextPreprocessor
 from services.online_vectorizers.Retriever import Retriever
 
 class Embedding_online(Retriever):
@@ -45,7 +45,7 @@ class Embedding_online(Retriever):
         model = Embedding_online.__loadModelInstance__()
         document_embeddings =  Embedding_online.__loadInstance__(dataset_name)
         docs = load_dataset(dataset_name)
-        processedQuery = preprocess_text(query)
+        processedQuery = TextPreprocessor.getInstance().preprocess_text(query)
         query_embedding = model.encode(processedQuery)
 
         cos_scores = util.cos_sim(torch.tensor(query_embedding), torch.tensor(document_embeddings))[0]
@@ -64,7 +64,7 @@ class Embedding_online(Retriever):
         model = Embedding_online.__loadModelInstance__()
         collection = Embedding_online.__get_collection__(dataset_name)
         #process query
-        processedQuery = preprocess_text(query)
+        processedQuery = TextPreprocessor.getInstance().preprocess_text(query)
         query_embedding = model.encode(processedQuery)
         search_results = collection.query(
             query_embeddings=[query_embedding],
