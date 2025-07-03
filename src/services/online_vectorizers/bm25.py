@@ -4,17 +4,20 @@ from rank_bm25 import BM25Okapi
 from loader import load_dataset
 from services.online_vectorizers.inverted_index import InvertedIndex
 from services.processing.text_preprocessor import TextPreprocessor
+from services.processing.antique_preprocessor import AntiquePreprocessor
 from services.online_vectorizers.Retriever import Retriever
 
 
 class BM25_online(Retriever):
     __bm25instance__ : dict[str, BM25Okapi] = {}
     __invertedIndex__ : dict[str, InvertedIndex] = {}
+    __docs__ : dict[str, list[str, str]] = {}
     @staticmethod
     def __loadInstance__(dataset_name : str):
         if dataset_name not in BM25_online.__bm25instance__.keys():
             with open(f"data/{dataset_name}/bm25_model.dill", "rb") as f:
                 BM25_online.__bm25instance__[dataset_name] = dill.load(f) 
+        return BM25_online.__bm25instance__[dataset_name]
     @staticmethod
     def __loadInvertedIndex__(dataset_name : str):
         if dataset_name not in BM25_online.__invertedIndex__.keys():
@@ -25,15 +28,19 @@ class BM25_online(Retriever):
                 inverted_index.doc_lengths = ii.doc_lengths
                 inverted_index.N = ii.N
                 BM25_online.__invertedIndex__[dataset_name] = inverted_index
+        return BM25_online.__invertedIndex__[dataset_name]
+    @staticmethod
+    def __loadDocs__(dataset_name : str):
+        if dataset_name not in BM25_online.__docs__.keys():
+            BM25_online.__docs__[dataset_name] = load_dataset(dataset_name)
+        return BM25_online.__docs__[dataset_name]
 
     def search(self, dataset_name: str, query: str, top_k: int = 10, with_inverted_index: bool = True) -> list[tuple[str, float, str]]:
         # Load the model and the documents
-        BM25_online.__loadInstance__(dataset_name)
-        bm25 = BM25_online.__bm25instance__[dataset_name]
-        docs = load_dataset(dataset_name)
+        bm25 = BM25_online.__loadInstance__(dataset_name)
+        docs = BM25_online.__loadDocs__(dataset_name)
         if with_inverted_index:
-            BM25_online.__loadInvertedIndex__(dataset_name)
-            inverted_index = BM25_online.__invertedIndex__[dataset_name]
+            inverted_index = BM25_online.__loadInvertedIndex__(dataset_name)
 
         # Execute the query
         query_tokens = TextPreprocessor.getInstance().preprocess_text(query)
