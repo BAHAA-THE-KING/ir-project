@@ -1,4 +1,5 @@
 import math
+from services.processing.text_preprocessor import TextPreprocessor
 
 def calc_dcg(relevance, rank):
     return ((2 ** relevance) - 1) / math.log10(rank + 1)
@@ -13,7 +14,7 @@ class Retriever:
         for i in range(len(queries)):
             query = queries[i]
             if print_more:
-                preprocess_text = preprocess_text
+                preprocess_text = TextPreprocessor.getInstance().preprocess_text
                 print(f"Query: {query.text}")
                 print(f"Query: {preprocess_text(query.text)}")
             
@@ -60,7 +61,11 @@ class Retriever:
             nDCG.append(res/ires)
             print(f"Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
         
-        print(f"Final Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
+        nDCG = sum(nDCG)/len(nDCG)*100
+
+        print(f"Final Average nDCG: {nDCG}%")
+
+        return nDCG
 
     def evaluateMRR(self, dataset_name, queries, qrels, K = 100, print_more = False):
         MRR = []
@@ -80,9 +85,9 @@ class Retriever:
                 print(f"Query: {i+1}/{len(queries)}")
                 print(f"Current MRR: {sum(MRR)/len(MRR)}")
         
-        MRR = sum(MRR)/len(MRR)
+        MRR = sum(MRR)/len(MRR)*100
         if print_more:
-            print(f"MRR: {MRR}")
+            print(f"MRR: {MRR}%")
         return MRR
     
     def evaluateMAP(self, dataset_name, queries, qrels, K = 10, print_more = False):
@@ -104,7 +109,7 @@ class Retriever:
                 print(f'Query: {i+1}/{len(queries)}')
                 if len(AP) > 0:
                     print(f'AP = {sum(AP) / len(AP) * 100}')
-        MAP = sum(AP) / len(AP)
+        MAP = sum(AP) / len(AP) * 100
         if print_more:
-            print(f'MAP={MAP}')
+            print(f'MAP={MAP}%')
         return MAP
