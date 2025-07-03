@@ -3,7 +3,7 @@ import dill
 from rank_bm25 import BM25Okapi
 from loader import load_dataset
 from services.online_vectorizers.inverted_index import InvertedIndex
-from src.services.processing.text_preprocessor import TextPreprocessor
+from services.processing.text_preprocessor import TextPreprocessor
 from services.online_vectorizers.Retriever import Retriever
 
 

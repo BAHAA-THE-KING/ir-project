@@ -5,7 +5,7 @@ import numpy as np
 import torch 
 from loader import load_dataset
 from sentence_transformers import SentenceTransformer
-from src.services.processing.text_preprocessor import TextPreprocessor
+from services.processing.text_preprocessor import TextPreprocessor
 from services.online_vectorizers.Retriever import Retriever
 
 class Embedding_online(Retriever):

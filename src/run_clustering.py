@@ -20,7 +20,7 @@ if str(project_root_dir) not in sys.path:
 # Now, imports like 'from src.loader' will work
 from src.loader import load_dataset_with_queries
 from src.services.offline_vectorizers.tfidf import tfidf_train
-from src.services.processing.text_preprocessor import TextPreprocessor
+from services.processing.text_preprocessor import TextPreprocessor
 
 # --- 1. NLTK Data Download Check (Crucial Step) ---
 print("--- Checking NLTK Data ---")

@@ -1,7 +1,7 @@
 import os
 import joblib
 from sklearn.feature_extraction.text import TfidfVectorizer
-from src.services.processing.text_preprocessor import TextPreprocessor
+from services.processing.text_preprocessor import TextPreprocessor
 
 # --- TF-IDF Training Function ---
 def tfidf_train(docs, dataset_name):

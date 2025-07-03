@@ -1,11 +1,10 @@
 import os
 import dill
 from rank_bm25 import BM25Okapi
-from src.services.processing.text_preprocessor import TextPreprocessor
+from services.processing.text_preprocessor import TextPreprocessor
 
 class BM25_offline:
-    @staticmethod
-    def bm25_train(docs, dataset_name):
+    def bm25_train(self, docs, dataset_name):
         # Train the model
         bm25 = BM25Okapi([doc.text for doc in docs], tokenizer = TextPreprocessor.getInstance().preprocess_text)
 
