@@ -83,18 +83,34 @@ class Retriever:
             if print_more:
                 print()
                 print(f"Query: {i+1}/{len(queries)}")
-                print(f"Current MRR: {sum(MRR)/len(MRR)}")
+                print(f"Current MRR: {sum(MRR) / len(MRR) * 100}")
         
-        MRR = sum(MRR)/len(MRR)*100
+        MRR = sum(MRR) / len(MRR) * 100
         if print_more:
             print(f"MRR: {MRR}%")
         return MRR
     
-    def evaluateMAP(self, dataset_name, queries, qrels, K = 10, print_more = False):
-        AP = []
+    def evaluateMAP(self, dataset_name, queries, qrels,docs, K = 10, print_more = False):
+        MAP = []
         for i in range(len(queries)):
+        # for i in [4,5,6]:
             query = queries[i]
+            if print_more:
+                print()
+                print(f'Query: {i+1}/{len(queries)}')
+                print(query.text)
+
             results = self.search(dataset_name, query.text, K, True)
+            if print_more:
+                print([res[0] for res in results])
+                print([qrel.doc_id+f": {qrel.relevance}" for qrel in qrels if qrel.query_id == query.query_id])
+                print("results")
+                for doc in [doc for doc in docs if doc.doc_id in [res[0] for res in results]]:
+                    print(doc.doc_id+" "+doc.text)
+                print("qrels")
+                koko = [qrel.doc_id for qrel in qrels if qrel.query_id == query.query_id]
+                for doc in [doc for doc in docs if doc.doc_id in koko]:
+                    print(doc.doc_id+" "+doc.text)
 
             relevant_num = 0
             precision_sum = 0
@@ -105,13 +121,14 @@ class Retriever:
             if print_more:
                 print(precision_sum)
             if relevant_num > 0:
-                AP.append(precision_sum / relevant_num)
+                MAP.append(precision_sum / relevant_num)
             if print_more:
-                print()
-                print(f'Query: {i+1}/{len(queries)}')
-                if len(AP) > 0:
-                    print(f'AP = {sum(AP) / len(AP) * 100}')
-        MAP = sum(AP) / len(AP) * 100
+                if len(MAP) > 0:
+                    print(f'MAP = {sum(MAP) / len(MAP) * 100}')
+        if len(MAP) > 0:
+            MAP = sum(MAP) / len(MAP) * 100
+        else:
+            MAP = 0
         if print_more:
             print(f'MAP={MAP}%')
         return MAP
