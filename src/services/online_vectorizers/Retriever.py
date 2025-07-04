@@ -98,10 +98,12 @@ class Retriever:
 
             relevant_num = 0
             precision_sum = 0
-            for res in results:
+            for ii, res in enumerate(results):
                 if len([qrel for qrel in qrels if qrel.query_id == query.query_id and qrel.doc_id == res[0] and qrel.relevance != 0]) == 1:
                     relevant_num += 1
-                    precision_sum += relevant_num / (i + 1)
+                    precision_sum += relevant_num / (ii + 1)
+            if print_more:
+                print(precision_sum)
             if relevant_num > 0:
                 AP.append(precision_sum / relevant_num)
             if print_more:
