@@ -69,13 +69,20 @@ class Retriever:
 
     def evaluateMRR(self, dataset_name, queries, qrels, K = 100, print_more = False):
         MRR = []
+
+        cleaned_qrels: dict[str, dict[str, int]] = {}
+        for qrel in qrels:
+            if qrel.query_id not in cleaned_qrels.keys():
+                cleaned_qrels[qrel.query_id] = {}
+            cleaned_qrels[qrel.query_id][qrel.doc_id] = qrel.relevance
+
         for i in range(len(queries)):
-            query=queries[i]
+            query = queries[i]
             results = self.search(dataset_name, query.text, K, True)
             
             firstRank = 100
             for ii, res in enumerate(results):
-                if len([qrel for qrel in qrels if qrel.query_id == query.query_id and qrel.doc_id == res[0] and qrel.relevance != 0]) == 1:
+                if res[0] in cleaned_qrels[query.query_id].keys() and cleaned_qrels[query.query_id][res[0]] > 0:
                     firstRank = ii + 1
             
             MRR.append(1/firstRank)
@@ -92,8 +99,14 @@ class Retriever:
     
     def evaluateMAP(self, dataset_name, queries, qrels,docs, K = 10, print_more = False):
         MAP = []
+
+        cleaned_qrels: dict[str, dict[str, int]] = {}
+        for qrel in qrels:
+            if qrel.query_id not in cleaned_qrels.keys():
+                cleaned_qrels[qrel.query_id] = {}
+            cleaned_qrels[qrel.query_id][qrel.doc_id] = qrel.relevance
+        
         for i in range(len(queries)):
-        # for i in [4,5,6]:
             query = queries[i]
             if print_more:
                 print()
@@ -115,7 +128,7 @@ class Retriever:
             relevant_num = 0
             precision_sum = 0
             for ii, res in enumerate(results):
-                if len([qrel for qrel in qrels if qrel.query_id == query.query_id and qrel.doc_id == res[0] and qrel.relevance != 0]) == 1:
+                if res[0] in cleaned_qrels[query.query_id].keys() and cleaned_qrels[query.query_id][res[0]] > 0:
                     relevant_num += 1
                     precision_sum += relevant_num / (ii + 1)
             if print_more:
