@@ -79,3 +79,40 @@ class Embedding_online(Retriever):
             text = meta.get('text', '')[:100] + "..." 
             results.append((doc_id, similarity_score, text))
         return results
+
+    def embedding_rerank(self, dataset_name: str, query: str, doc_ids: list) -> list[tuple[str, float]]:
+        """
+        Efficiently re-ranks a list of documents using the loaded embeddings.
+        """
+
+        docs_list = load_dataset(dataset_name)
+        document_embeddings =  Embedding_online.__loadInstance__(dataset_name)
+        model = Embedding_online.__loadModelInstance__()
+
+        # 1. Create a quick lookup map for doc_id to its index
+        doc_id_to_index = enumerate(docs_list)
+
+        # 2. Get the indices and embeddings for the documents we need to rerank
+        candidate_indices = [i for i, doc in doc_id_to_index if doc.doc_id in doc_ids]
+
+        # Filter out any docs that might not be in our list
+        valid_indices = [idx for idx in candidate_indices if idx is not None]
+        
+        if not valid_indices:
+            return []
+            
+        candidate_embeddings = document_embeddings[valid_indices]
+        
+        # 3. Encode the query
+        query_embedding = model.encode(query, convert_to_tensor=True)
+        
+        # 4. Calculate similarity scores
+        cosine_scores = util.cos_sim(query_embedding, candidate_embeddings)[0]
+        
+        # 5. Pair the original doc_ids (that were valid) with their new scores
+        valid_doc_ids = [docs_list[i] for i in valid_indices]
+        reranked_results = []
+        for doc_id, score in zip(valid_doc_ids, cosine_scores):
+            reranked_results.append((doc_id, score.item()))
+
+        return sorted(reranked_results, key=lambda item: item[1], reverse=True)
