@@ -1,8 +1,12 @@
 import time
 from config import DEFAULT_DATASET
-from loader import load_dataset_with_queries
+from loader import load_dataset_with_queries, load_dataset
 from services.online_vectorizers.bm25 import BM25_online
-from services.online_vectorizers.tfidf import TFIDF_online
+from services.offline_vectorizers.bm25 import BM25_offline
+from services.online_vectorizers.inverted_index import InvertedIndex
+from services.processing.text_preprocessor import TextPreprocessor
+import dill
+import time
 
 import sys
 import os
@@ -13,48 +17,33 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 def main():
     dataset_name = DEFAULT_DATASET
     docs, queries, qrels = load_dataset_with_queries(dataset_name)
-    retriever = TFIDF_online()
+    print('Dataset loaded')
+    # st = time.time()
+    # BM25_offline().bm25_train(docs, dataset_name)
+    # print(f"{time.time() - st}s")
 
-    retriever.__loadInstance__(dataset_name)
-    retriever.__loadInvertedIndex__(dataset_name)
-    print("search started")
+    # st = time.time()
+    # index = InvertedIndex()
+    # for i, doc in enumerate([TextPreprocessor.getInstance().preprocess_text(doc.text) for doc in docs]):
+    #     index.add_document(i, doc)
+    # with open('data/antique/inverted_index.dill', 'wb') as f:
+    #     dill.dump(index, f)
+    # print(f"{time.time() - st}s")
     
-    retriever.evaluateNDCG(dataset_name, queries, qrels, docs, 10)
-    # retriever.evaluateMAP()
+    # st = time.time()
+    # print(BM25_online().evaluateMAP(dataset_name, queries, qrels, docs))
+    # print(f"{time.time() - st}s")
 
-    start_time = time.time()
-    results = retriever.search(dataset_name, "saddam", 10, True)
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"Function execution time: {elapsed_time:.4f} seconds")
+    # st = time.time()
+    # print(BM25_online().evaluateMRR(dataset_name, queries, qrels))
+    # print(f"{time.time() - st}s")
 
-    start_time = time.time()
-    results = retriever.search(dataset_name, "politicians", 10, True)
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"Function execution time: {elapsed_time:.4f} seconds")
+    # st = time.time()
+    # print(BM25_online().evaluateNDCG(dataset_name, queries, qrels, docs))
+    # print(f"{time.time() - st}s")
 
+    BM25_online().search(dataset_name, "hi man, how are you ?")
 
-    start_time = time.time()
-    results = retriever.search(dataset_name, "please don't", 10)
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"Function execution time: {elapsed_time:.4f} seconds")
-
-
-    print("\nSearch Results (Ranked by Relevance):")
-    for res in results:
-        print(f"  Doc ID: {res[0]}, Score: {res[1]:.4f}, Text: '{res[2]}'")
-    print("-" * 60)
-
-    
-    # retriever = BM25_online()
-    # MRR = retriever.evaluateMRR(dataset_name, queries, qrels)
-    # MAP = retriever.evaluateMAP(dataset_name, queries, qrels)
-
-    # print(f"MAP={MAP}")
-    # print(f"MRR={MRR}")
-    
 if __name__ == "__main__":
     main()
 

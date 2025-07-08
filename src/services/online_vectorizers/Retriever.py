@@ -1,4 +1,5 @@
 import math
+from services.processing.text_preprocessor import TextPreprocessor
 
 def calc_dcg(relevance, rank):
     return ((2 ** relevance) - 1) / math.log10(rank + 1)
@@ -13,7 +14,7 @@ class Retriever:
         for i in range(len(queries)):
             query = queries[i]
             if print_more:
-                preprocess_text = preprocess_text
+                preprocess_text = TextPreprocessor.getInstance().preprocess_text
                 print(f"Query: {query.text}")
                 print(f"Query: {preprocess_text(query.text)}")
             
@@ -52,25 +53,39 @@ class Retriever:
             res = sum(DCG) 
             ires = sum(iDCG) 
             
-            print("")
-            print(f"query: {i+1}/{len(queries)}")
-            print(f"DCG: {res}")
-            print(f"iDCG: {ires}")
-            print(f"nDCG: {res/ires*100}%")
+            if print_more:
+                print("")
+                print(f"query: {i+1}/{len(queries)}")
+                print(f"DCG: {res}")
+                print(f"iDCG: {ires}")
+                print(f"nDCG: {res/ires*100}%")
             nDCG.append(res/ires)
-            print(f"Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
+            if print_more:
+                print(f"Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
         
-        print(f"Final Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
+        nDCG = sum(nDCG)/len(nDCG)*100
+
+        if print_more:
+            print(f"Final Average nDCG: {nDCG}%")
+
+        return nDCG
 
     def evaluateMRR(self, dataset_name, queries, qrels, K = 100, print_more = False):
         MRR = []
+
+        cleaned_qrels: dict[str, dict[str, int]] = {}
+        for qrel in qrels:
+            if qrel.query_id not in cleaned_qrels.keys():
+                cleaned_qrels[qrel.query_id] = {}
+            cleaned_qrels[qrel.query_id][qrel.doc_id] = qrel.relevance
+
         for i in range(len(queries)):
-            query=queries[i]
+            query = queries[i]
             results = self.search(dataset_name, query.text, K, True)
             
             firstRank = 100
             for ii, res in enumerate(results):
-                if len([qrel for qrel in qrels if qrel.query_id == query.query_id and qrel.doc_id == res[0] and qrel.relevance != 0]) == 1:
+                if res[0] in cleaned_qrels[query.query_id].keys() and cleaned_qrels[query.query_id][res[0]] > 0:
                     firstRank = ii + 1
             
             MRR.append(1/firstRank)
@@ -78,33 +93,58 @@ class Retriever:
             if print_more:
                 print()
                 print(f"Query: {i+1}/{len(queries)}")
-                print(f"Current MRR: {sum(MRR)/len(MRR)}")
+                print(f"Current MRR: {sum(MRR) / len(MRR) * 100}")
         
-        MRR = sum(MRR)/len(MRR)
+        MRR = sum(MRR) / len(MRR) * 100
         if print_more:
-            print(f"MRR: {MRR}")
+            print(f"MRR: {MRR}%")
         return MRR
     
-    def evaluateMAP(self, dataset_name, queries, qrels, K = 10, print_more = False):
-        AP = []
+    def evaluateMAP(self, dataset_name, queries, qrels,docs, K = 10, print_more = False):
+        MAP = []
+
+        cleaned_qrels: dict[str, dict[str, int]] = {}
+        for qrel in qrels:
+            if qrel.query_id not in cleaned_qrels.keys():
+                cleaned_qrels[qrel.query_id] = {}
+            cleaned_qrels[qrel.query_id][qrel.doc_id] = qrel.relevance
+        
         for i in range(len(queries)):
             query = queries[i]
-            results = self.search(dataset_name, query.text, K, True)
-
-            relevant_num = 0
-            precision_sum = 0
-            for res in results:
-                if len([qrel for qrel in qrels if qrel.query_id == query.query_id and qrel.doc_id == res[0] and qrel.relevance != 0]) == 1:
-                    relevant_num += 1
-                    precision_sum += relevant_num / (i + 1)
-            if relevant_num > 0:
-                AP.append(precision_sum / relevant_num)
             if print_more:
                 print()
                 print(f'Query: {i+1}/{len(queries)}')
-                if len(AP) > 0:
-                    print(f'AP = {sum(AP) / len(AP) * 100}')
-        MAP = sum(AP) / len(AP)
+                print(query.text)
+
+            results = self.search(dataset_name, query.text, K, True)
+            if print_more:
+                print([res[0] for res in results])
+                print([qrel.doc_id+f": {qrel.relevance}" for qrel in qrels if qrel.query_id == query.query_id])
+                print("results")
+                for doc in [doc for doc in docs if doc.doc_id in [res[0] for res in results]]:
+                    print(doc.doc_id+" "+doc.text)
+                print("qrels")
+                koko = [qrel.doc_id for qrel in qrels if qrel.query_id == query.query_id]
+                for doc in [doc for doc in docs if doc.doc_id in koko]:
+                    print(doc.doc_id+" "+doc.text)
+
+            relevant_num = 0
+            precision_sum = 0
+            for ii, res in enumerate(results):
+                if res[0] in cleaned_qrels[query.query_id].keys() and cleaned_qrels[query.query_id][res[0]] > 0:
+                    relevant_num += 1
+                    precision_sum += relevant_num / (ii + 1)
+            if print_more:
+                print(precision_sum)
+            if relevant_num > 0:
+                MAP.append(precision_sum / relevant_num)
+            if print_more:
+                if len(MAP) > 0:
+                    print(f'MAP = {sum(MAP) / len(MAP) * 100}')
+        if len(MAP) > 0:
+            MAP = sum(MAP) / len(MAP) * 100
+        else:
+            MAP = 0
         if print_more:
-            print(f'MAP={MAP}')
+            print(f'MAP={MAP}%')
         return MAP

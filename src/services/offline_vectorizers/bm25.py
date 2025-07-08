@@ -6,7 +6,7 @@ from services.processing.text_preprocessor import TextPreprocessor
 class BM25_offline:
     def bm25_train(self, docs, dataset_name):
         # Train the model
-        bm25 = BM25Okapi([doc.text for doc in docs], tokenizer = TextPreprocessor.getInstance().preprocess_text)
+        bm25 = BM25Okapi([doc.text for doc in docs], tokenizer = TextPreprocessor.getInstance().preprocess_text, k1 = 1)
 
         # Save the model and the documents
         path = f"data/{dataset_name}/bm25_model.dill"
