@@ -73,6 +73,7 @@ def main():
     # st = time.time()
     # print(f"MRR= {Hybrid_online().evaluateMRR(dataset_name, queries, qrels)}")
     # print(f"{time.time() - st}s")
+    pass
 
 if __name__ == "__main__":
     main()
