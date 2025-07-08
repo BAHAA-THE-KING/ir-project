@@ -7,7 +7,7 @@ import os
 
 def download_bert():
     MODEL_NAME = 'all-MiniLM-L6-v2'
-    MODEL_PATH = f'models/{MODEL_NAME}'
+    MODEL_PATH = f'data/models/{MODEL_NAME}'
     if not os.path.exists(MODEL_PATH):
         print(f"Model '{MODEL_NAME}' not found locally. Downloading...")
         model = SentenceTransformer(MODEL_NAME)
@@ -18,10 +18,10 @@ def download_bert():
 
 
 def embedding_train(docs, dataset_name):
-    preprocessor = TextPreprocessor()
+    preprocessor = TextPreprocessor.getInstance()
     print("Loading Sentence-BERT model for training...")
     model = SentenceTransformer('all-MiniLM-L6-v2')
-    doc_texts = [preprocessor.preprocess_text(doc.text) for doc in docs]
+    doc_texts = [" ".join(preprocessor.preprocess_text(doc.text)) for doc in docs]
     print(f"Generating embeddings for {len(doc_texts)} documents...")
     document_embeddings = model.encode(doc_texts, show_progress_bar=True)
     embedding_path = f"data/{dataset_name}/bert_embeddings.npy"
@@ -35,16 +35,15 @@ def embedding_train(docs, dataset_name):
 
 def populate_vector_store(docs, dataset_name):
     print("--- Starting to Populate Vector Store ---")
-    model_path = 'models/all-MiniLM-L6-v2'
+    model_path = 'data/models/all-MiniLM-L6-v2'
     print(f"Loading model from: {model_path}...")
     model = SentenceTransformer(model_path)
-    preprocessor = TextPreprocessor()
+    preprocessor = TextPreprocessor.getInstance()
     print("Preprocessing texts...")
-    doc_texts = [preprocessor.preprocess_for_bert(doc.text) for doc in docs]
+    doc_texts = [" ".join(preprocessor.preprocess_text(doc.text)) for doc in docs]
 
     print("Generating embeddings")
     embeddings = model.encode(doc_texts, show_progress_bar=True)
-
 
     client = chromadb.PersistentClient(path="chroma_db")
     

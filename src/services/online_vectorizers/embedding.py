@@ -59,7 +59,7 @@ class Embedding_online(Retriever):
             # print(f"Doc ID: {doc_id}, Score: {score.item():.4f}, Text: {doc_text}"
         return results
 
-    def embedding_vectors_search(dataset_name: str, query: str, top_k: int):
+    def embedding_vectors_search(self, dataset_name: str, query: str, top_k: int):
         #Load model and collection
         model = Embedding_online.__loadModelInstance__()
         collection = Embedding_online.__get_collection__(dataset_name)
