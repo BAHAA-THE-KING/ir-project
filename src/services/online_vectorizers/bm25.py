@@ -4,7 +4,6 @@ from rank_bm25 import BM25Okapi
 from loader import load_dataset
 from services.online_vectorizers.inverted_index import InvertedIndex
 from services.processing.text_preprocessor import TextPreprocessor
-from services.processing.antique_preprocessor import AntiquePreprocessor
 from services.online_vectorizers.Retriever import Retriever
 
 
