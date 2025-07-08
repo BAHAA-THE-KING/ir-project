@@ -53,17 +53,20 @@ class Retriever:
             res = sum(DCG) 
             ires = sum(iDCG) 
             
-            print("")
-            print(f"query: {i+1}/{len(queries)}")
-            print(f"DCG: {res}")
-            print(f"iDCG: {ires}")
-            print(f"nDCG: {res/ires*100}%")
+            if print_more:
+                print("")
+                print(f"query: {i+1}/{len(queries)}")
+                print(f"DCG: {res}")
+                print(f"iDCG: {ires}")
+                print(f"nDCG: {res/ires*100}%")
             nDCG.append(res/ires)
-            print(f"Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
+            if print_more:
+                print(f"Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
         
         nDCG = sum(nDCG)/len(nDCG)*100
 
-        print(f"Final Average nDCG: {nDCG}%")
+        if print_more:
+            print(f"Final Average nDCG: {nDCG}%")
 
         return nDCG
 
