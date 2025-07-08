@@ -2,6 +2,7 @@ import time
 import dill
 import joblib
 import numpy as np
+from loader import load_dataset
 from services.processing.text_preprocessor import TextPreprocessor
 from sklearn.metrics.pairwise import cosine_similarity
 from services.online_vectorizers.Retriever import Retriever
@@ -16,7 +17,7 @@ class TFIDF_online(Retriever):
         if dataset_name not in TFIDF_online.__tfidfInstance__.keys():
 
             # Load the model and the documents
-            docs = joblib.load(f"data/{dataset_name}/docs_list.joblib")
+            docs = load_dataset(dataset_name)
             vectorizer = joblib.load(f"data/{dataset_name}/tfidf_vectorizer.joblib")
             docs_tfidf_matrix = joblib.load(f"data/{dataset_name}/tfidf_matrix.joblib")
 
@@ -25,7 +26,7 @@ class TFIDF_online(Retriever):
     @staticmethod
     def __loadInvertedIndex__(dataset_name : str):
         if dataset_name not in TFIDF_online.__invertedIndex__.keys():
-            with open(f"data/{dataset_name}/inverted_index_tfidf.dill", "rb") as f:
+            with open(f"data/{dataset_name}/inverted_index.dill", "rb") as f:
                 inverted_index = InvertedIndex()
                 ii = dill.load(f)
                 inverted_index.index = ii.index
@@ -33,7 +34,7 @@ class TFIDF_online(Retriever):
                 inverted_index.N = ii.N
                 TFIDF_online.__invertedIndex__[dataset_name] = inverted_index
 
-    def search(self, dataset_name, query, top_k, with_index = False):
+    def search(self, dataset_name, query, top_k, with_index = True):
 
         # Load the model and the index
         self.__loadInstance__(dataset_name)

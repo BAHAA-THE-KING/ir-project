@@ -24,10 +24,6 @@ def tfidf_train(docs, dataset_name):
     # Save the trained TF-IDF vectorizer
     joblib.dump(vectorizer, f"data/{dataset_name}/tfidf_vectorizer.joblib")
 
-    # Save the original documents list
-    joblib.dump(docs, f"data/{dataset_name}/docs_list.joblib")
-
-
     # For search efficiency, also save the pre-computed TF-IDF matrix for documents
     joblib.dump(tfidf_matrix, f"data/{dataset_name}/tfidf_matrix.joblib")
     
