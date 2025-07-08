@@ -1,17 +1,18 @@
-from typing import Dict, List, Tuple, Optional
-from enum import Enum
 import sys
 import os
+from typing import Dict, List, Tuple, Optional
+from enum import Enum
 
-from config import DATASETS, DEFAULT_DATASET
-from loader import load_dataset_with_queries
-from services.online_vectorizers.hybrid import hybrid_search
-from services.online_vectorizers.bm25 import BM25_online
-from services.online_vectorizers.tfidf import tfidf_search
-from services.online_vectorizers.embedding import embedding_search
-
-
+# Add the parent directory to the Python path
+# This assumes ir_engine.py is in src/gui/, so parent is src/, and grand-parent is project root.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.config import DATASETS, DEFAULT_DATASET
+from src.loader import load_dataset_with_queries # Ensure this import is correct based on your loader.py
+from src.services.online_vectorizers.hybrid import hybrid_search # hybrid_search is a standalone function
+from src.services.online_vectorizers.bm25 import BM25_online # Import the class
+from src.services.online_vectorizers.tfidf import TFIDF_online # Import the class
+from src.services.online_vectorizers.embedding import Embedding_online # Import the class
 
 
 class SearchModel(Enum):
@@ -30,6 +31,40 @@ class IREngine:
         self.current_model: SearchModel = SearchModel.TFIDF
         self._load_dataset(DEFAULT_DATASET)
         print("IREngine initialized successfully")
+        
+    def search(self, model_name: str, query: str, top_k: int = 10,
+            use_inverted_index: bool = False, use_vector_store: bool = False,
+            include_cluster_info: bool = False) -> List[Tuple[str, float, str]]:
+        """
+        Search the current dataset using the specified model and options.
+        Returns a list of (doc_id, score, snippet) tuples.
+        Args:
+            model_name: The search model to use (e.g., "TF-IDF", "BM25", "Hybrid", "Embedding").
+            query: The search query string.
+            top_k: Number of top results to return.
+            use_inverted_index: For TF-IDF/BM25, whether to use an inverted index.
+            use_vector_store: For Embedding, whether to use a vector store.
+            include_cluster_info: For future use (currently ignored).
+        """
+        print(f"Searching for query: '{query}' using model: {model_name} (inverted_index={use_inverted_index}, vector_store={use_vector_store}, cluster_info={include_cluster_info})")
+        if model_name == SearchModel.HYBRID.value:
+            # Hybrid search might not directly use 'with_index' or have its own internal logic.
+            # We must return (doc_id, score, snippet) tuples.
+            hybrid_results = hybrid_search(query, self.docs, self.queries, self.qrels, top_k)
+            # If hybrid_search returns (doc_id, score), add a snippet from doc text
+            results = []
+            for doc_id, score in hybrid_results:
+                snippet = self.docs[doc_id].text[:80] + "..." if doc_id in self.docs else ""
+                results.append((doc_id, score, snippet))
+            return results
+        elif model_name == SearchModel.BM25.value:
+            return BM25_online().search(self.current_dataset, query, top_k, with_inverted_index=use_inverted_index)
+        elif model_name == SearchModel.TFIDF.value:
+            return TFIDF_online().search(self.current_dataset, query, top_k, with_index=use_inverted_index)
+        elif model_name == SearchModel.EMBEDDING.value:
+            return Embedding_online().search(self.current_dataset, query, top_k, with_index=use_vector_store)
+        else:
+            raise ValueError(f"Model {model_name} not supported for search.")
     
     def _load_dataset(self, dataset_name: str) -> None:
         """Load a dataset by name."""
@@ -37,9 +72,18 @@ class IREngine:
         if dataset_name not in DATASETS:
             raise ValueError(f"Dataset {dataset_name} not found")
         
-        self.docs, self.queries, self.qrels = load_dataset_with_queries(dataset_name)
+        # Load docs, queries, and qrels
+        docs_list, queries, qrels = load_dataset_with_queries(dataset_name)
+        
+        # Convert the list of Docs to a dictionary for efficient lookup by doc_id
+        self.docs = {doc.doc_id: doc for doc in docs_list}
+        # Convert queries and qrels to dicts for hybrid_search compatibility
+        self.queries = {q.query_id: q for q in queries}
+        self.qrels = {(q.query_id, q.doc_id): q for q in qrels}
         self.current_dataset = dataset_name
         print(f"Dataset loaded successfully. Documents: {len(self.docs)}")
+        # Ensure TFIDF model is loaded for this dataset
+        TFIDF_online.__loadInstance__(dataset_name)
     
     def get_available_datasets(self) -> List[str]:
         """Get list of available dataset names."""
@@ -55,11 +99,13 @@ class IREngine:
         """Change the current dataset."""
         self._load_dataset(dataset_name)
     
-    def get_dataset_stats(self) -> Dict:
-        """Get statistics about the current dataset."""
+    def get_dataset_stats(self, dataset_name: Optional[str] = None) -> Dict:
+        """Get statistics about the current or specified dataset."""
+        if dataset_name is None:
+            dataset_name = self.current_dataset
         return {
-            "name": self.current_dataset,
-            "description": DATASETS[self.current_dataset]["description"],
+            "name": dataset_name,
+            "description": DATASETS[dataset_name]["description"],
             "num_docs": len(self.docs),
             "num_queries": len(self.queries),
             "num_qrels": len(self.qrels)
@@ -81,24 +127,10 @@ class IREngine:
         """Get the current search model name."""
         return self.current_model.value
     
-    def search(self, query: str, top_k: int = 10) -> List[Tuple[int, float, str]]:
-        """
-        Search the current dataset using the selected model.
-        Returns a list of (doc_id, score) tuples.
-        """
-        print(f"Searching for query: {query} using model: {self.current_model.value}")
-        if (self.current_model.value=='Hybrid'):
-            return hybrid_search(query, self.docs, self.queries, self.qrels, top_k)
-        elif (self.current_model.value=='BM25'):
-            return BM25_online.bm25_search(self.current_dataset, query, top_k)
-        elif (self.current_model.value=='TF-IDF'):
-            return tfidf_search(self.current_dataset, query, top_k)
-        elif (self.current_model.value=='Embedding'):
-            return embedding_search(self.current_dataset, query, top_k)
-        else:
-            raise ValueError(f"Model {self.current_model.value} not found")
-    
     def get_document(self, doc_id: str) -> Optional[str]:
-        """Get the content of a specific document."""
+        """Get the content of a specific document by its doc_id."""
         print(f"Getting document: {doc_id}")
-        return self.docs[doc_id].text
+        doc_obj = self.docs.get(doc_id) # Efficient lookup using the dictionary
+        if doc_obj:
+            return doc_obj.text
+        return None
