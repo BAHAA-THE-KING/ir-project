@@ -63,16 +63,19 @@ class TextPreprocessor:
 
         return ' '.join(lemmatized_words)
 
-    def preprocess_text(self, text):
+    def preprocess_text(self, text, remove_stopwords_flag=True): 
         """
         Apply full preprocessing pipeline
         """
         if not isinstance(text, str):
-            return ""
+            return [] 
         
-        # Apply all preprocessing steps
+       
         text = self.__clean_text__(text)
         text = self.__lemmatize_text__(text)
-        text = self.__remove_stopwords__(text)
+        
+      
+        if remove_stopwords_flag:
+            text = self.__remove_stopwords__(text)
 
         return word_tokenize(text.strip())

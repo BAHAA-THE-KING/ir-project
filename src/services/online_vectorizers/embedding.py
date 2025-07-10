@@ -1,22 +1,144 @@
+# import math
+# import chromadb
+# from sentence_transformers import SentenceTransformer, util
+# import numpy as np
+# import torch 
+# from loader import load_dataset 
+# from services.processing.text_preprocessor import TextPreprocessor
+# from services.online_vectorizers.Retriever import Retriever 
+
+# class Embedding_online(Retriever):
+#     __embeddingInstance__ : dict[str, any] = {}
+#     __collection_instance__: dict = {}
+#     __modelInstance__ = None
+
+#     @staticmethod
+#     def __loadModelInstance__():
+#         if Embedding_online.__modelInstance__ == None:
+         
+#             Embedding_online.__modelInstance__ = SentenceTransformer("all-MiniLM-L6-v2") 
+            
+         
+#             if torch.cuda.is_available():
+#                 Embedding_online.__modelInstance__.to('cuda')
+#                 print("Embedding model moved to GPU.")
+#             else:
+#                 print("GPU not available, embedding model running on CPU.")
+                
+#         return Embedding_online.__modelInstance__
+
+#     @staticmethod
+#     def __loadInstance__(dataset_name : str):
+    
+#         if dataset_name not in Embedding_online.__embeddingInstance__.keys():
+#             with open(f"./data/{dataset_name}/bert_embeddings.npy", "rb") as f:
+#                 Embedding_online.__embeddingInstance__[dataset_name] = np.load(f)
+#         return Embedding_online.__embeddingInstance__[dataset_name]
+
+#     @staticmethod
+#     def __get_collection__(dataset_name: str):
+     
+#         if dataset_name not in Embedding_online.__collection_instance__:
+#             print(f"Connecting to ChromaDB and getting collection: {dataset_name}_embeddings...")
+         
+#             client = chromadb.PersistentClient(path="./chroma_db") 
+#             Embedding_online.__collection_instance__[dataset_name] = client.get_collection(name=f"{dataset_name}_embeddings")
+#         return Embedding_online.__collection_instance__[dataset_name]
+
+#     def search(self, dataset_name: str, query: str, top_k: int = 10, with_index: bool = True) -> list[tuple[str, float, str]]:
+#         if with_index:
+#             return self.embedding_vectors_search(dataset_name, query, top_k)
+#         else:
+#             return self.embedding_search(dataset_name, query, top_k)
+
+#     def embedding_search(self, dataset_name: str, query: str, top_k: int):
+#         model = Embedding_online.__loadModelInstance__() 
+#         document_embeddings = Embedding_online.__loadInstance__(dataset_name)
+#         docs = load_dataset(dataset_name)
+        
+#         processedQueryTokens = TextPreprocessor.getInstance().preprocess_text(query, remove_stopwords_flag=False)
+#         processedQuery = " ".join(processedQueryTokens) 
+        
+#         query_embedding = model.encode(processedQuery, convert_to_tensor=True) 
+        
+#         cos_scores = util.cos_sim(query_embedding, torch.tensor(document_embeddings).to(query_embedding.device))[0]
+#         top_results = torch.topk(cos_scores, k=top_k)
+#         results = []
+#         for score, idx in zip(top_results[0], top_results[1]):
+#             doc_id = docs[idx].doc_id
+#             doc_text = docs[idx].text[:100] + "..." 
+#             results.append((doc_id, score.item(), doc_text))
+#         return results
+
+#     def embedding_vectors_search(self, dataset_name: str, query: str, top_k: int):
+#         model = Embedding_online.__loadModelInstance__() 
+#         collection = Embedding_online.__get_collection__(dataset_name)
+        
+#         processedQueryTokens = TextPreprocessor.getInstance().preprocess_text(query, remove_stopwords_flag=False)
+#         processedQuery = " ".join(processedQueryTokens) 
+        
+#         query_embedding = model.encode(processedQuery, convert_to_tensor=False) 
+#         search_results = collection.query(
+#             query_embeddings=[query_embedding],
+#             n_results=top_k
+#         )
+#         results = []
+#         ids = search_results['ids'][0]
+#         distances = search_results['distances'][0]
+#         metadatas = search_results['metadatas'][0]
+#         for doc_id, score, meta in zip(ids, distances, metadatas):
+#             similarity_score = 1 - score
+#             text = meta.get('text', '')[:100] + "..." 
+#             results.append((doc_id, similarity_score, text))
+#         return results
+
+#     def embedding_rerank(self, dataset_name: str, query: str, doc_ids: list) -> list[tuple[str, float]]:
+#         docs_list = load_dataset(dataset_name)
+#         model = Embedding_online.__loadModelInstance__() 
+
+#         doc_texts_to_rerank = []
+#         doc_id_to_original_doc_obj = {doc.doc_id: doc for doc in docs_list} 
+        
+#         for doc_id in doc_ids:
+#             if doc_id in doc_id_to_original_doc_obj:
+#                 doc_texts_to_rerank.append(doc_id_to_original_doc_obj[doc_id].text)
+            
+#         if not doc_texts_to_rerank:
+#             return []
+
+#         candidate_embeddings = model.encode(doc_texts_to_rerank, convert_to_tensor=True) 
+        
+#         query_embedding = model.encode(query, convert_to_tensor=True)
+        
+#         cosine_scores = util.cos_sim(query_embedding, candidate_embeddings)[0]
+        
+#         reranked_results = []
+#         for i, score in enumerate(cosine_scores):
+#             reranked_results.append((doc_ids[i], score.item()))
+
+#         return sorted(reranked_results, key=lambda item: item[1], reverse=True)
+
+# src/services/online_vectorizers/embedding.py
+
 import math
 import chromadb
 from sentence_transformers import SentenceTransformer, util
 import numpy as np
 import torch 
 from loader import load_dataset
-from sentence_transformers import SentenceTransformer
 from services.processing.text_preprocessor import TextPreprocessor
 from services.online_vectorizers.Retriever import Retriever
 
 class Embedding_online(Retriever):
     __embeddingInstance__ : dict[str, any] = {}
     __collection_instance__: dict = {}
-    __modelInstance__  = None
+    __modelInstance__ = None
 
     @staticmethod
     def __loadModelInstance__():
         if Embedding_online.__modelInstance__ == None:
-            Embedding_online.__modelInstance__ = SentenceTransformer("data/models/all-MiniLM-L6-v2") 
+            # تأكد أن هذا المسار صحيح للموديل الخاص بك في Google Drive
+            Embedding_online.__modelInstance__ = SentenceTransformer("all-MiniLM-L6-v2") 
         return Embedding_online.__modelInstance__
 
     @staticmethod
@@ -41,31 +163,34 @@ class Embedding_online(Retriever):
             return self.embedding_search(dataset_name, query, top_k)
 
     def embedding_search(self, dataset_name: str, query: str, top_k: int):
-        # Load model and documents
         model = Embedding_online.__loadModelInstance__()
-        document_embeddings =  Embedding_online.__loadInstance__(dataset_name)
+        document_embeddings = Embedding_online.__loadInstance__(dataset_name)
         docs = load_dataset(dataset_name)
-        processedQuery = TextPreprocessor.getInstance().preprocess_text(query)
-        query_embedding = model.encode(processedQuery)
-
-        cos_scores = util.cos_sim(torch.tensor(query_embedding), torch.tensor(document_embeddings))[0]
+        
+        # التغيير هنا: دمج التوكنات إلى سلسلة نصية واحدة قبل التشفير
+        processedQueryTokens = TextPreprocessor.getInstance().preprocess_text(query, remove_stopwords_flag=False)
+        processedQuery = " ".join(processedQueryTokens) 
+        
+        query_embedding = model.encode(processedQuery, convert_to_tensor=True) # أضف convert_to_tensor=True هنا
+        
+        cos_scores = util.cos_sim(query_embedding, torch.tensor(document_embeddings))[0] # استخدم query_embedding مباشرة
         top_results = torch.topk(cos_scores, k=top_k)
         results = []
-        # print(f"\nTop {top_k} results for query: '{query}'")
         for score, idx in zip(top_results[0], top_results[1]):
             doc_id = docs[idx].doc_id
             doc_text = docs[idx].text[:100] + "..." 
             results.append((doc_id, score.item(), doc_text))
-            # print(f"Doc ID: {doc_id}, Score: {score.item():.4f}, Text: {doc_text}"
         return results
 
     def embedding_vectors_search(self, dataset_name: str, query: str, top_k: int):
-        #Load model and collection
         model = Embedding_online.__loadModelInstance__()
         collection = Embedding_online.__get_collection__(dataset_name)
-        #process query
-        processedQuery = TextPreprocessor.getInstance().preprocess_text(query)
-        query_embedding = model.encode(processedQuery)
+        
+        # التغيير هنا: دمج التوكنات إلى سلسلة نصية واحدة قبل التشفير
+        processedQueryTokens = TextPreprocessor.getInstance().preprocess_text(query, remove_stopwords_flag=False)
+        processedQuery = " ".join(processedQueryTokens) 
+        
+        query_embedding = model.encode(processedQuery, convert_to_tensor=False) # ChromaDB قد يفضل numpy
         search_results = collection.query(
             query_embeddings=[query_embedding],
             n_results=top_k
@@ -81,27 +206,28 @@ class Embedding_online(Retriever):
         return results
 
     def embedding_rerank(self, dataset_name: str, query: str, doc_ids: list) -> list[tuple[str, float]]:
-        """
-        Efficiently re-ranks a list of documents using the loaded embeddings.
-        """
-
         docs_list = load_dataset(dataset_name)
-        document_embeddings =  Embedding_online.__loadInstance__(dataset_name)
+        document_embeddings = Embedding_online.__loadInstance__(dataset_name)
         model = Embedding_online.__loadModelInstance__()
 
         # 1. Create a quick lookup map for doc_id to its index
-        doc_id_to_index = enumerate(docs_list)
-
-        # 2. Get the indices and embeddings for the documents we need to rerank
-        candidate_indices = [i for i, doc in doc_id_to_index if doc.doc_id in doc_ids]
-
-        # Filter out any docs that might not be in our list
-        valid_indices = [idx for idx in candidate_indices if idx is not None]
+        # تصحيح: هذا الجزء لا ينشئ خريطة doc_id إلى الفهرس بشكل صحيح
+        # يجب أن تكون خريطة حقيقية {doc.doc_id: index for index, doc in enumerate(docs_list)}
+        # ولكن لغرض الـ rerank، سنقوم بتحويل doc_ids إلى النصوص أولاً
         
-        if not valid_indices:
-            return []
+        # تحويل قائمة doc_ids إلى قائمة النصوص المقابلة لها
+        doc_texts_to_rerank = []
+        doc_id_to_original_doc_obj = {doc.doc_id: doc for doc in docs_list} # قاموس للبحث السريع
+        
+        for doc_id in doc_ids:
+            if doc_id in doc_id_to_original_doc_obj:
+                doc_texts_to_rerank.append(doc_id_to_original_doc_obj[doc_id].text)
             
-        candidate_embeddings = document_embeddings[valid_indices]
+        if not doc_texts_to_rerank:
+            return []
+
+        # 2. Encode the candidate documents
+        candidate_embeddings = model.encode(doc_texts_to_rerank, convert_to_tensor=True)
         
         # 3. Encode the query
         query_embedding = model.encode(query, convert_to_tensor=True)
@@ -109,10 +235,9 @@ class Embedding_online(Retriever):
         # 4. Calculate similarity scores
         cosine_scores = util.cos_sim(query_embedding, candidate_embeddings)[0]
         
-        # 5. Pair the original doc_ids (that were valid) with their new scores
-        valid_doc_ids = [docs_list[i] for i in valid_indices]
+        # 5. Pair the original doc_ids with their new scores
         reranked_results = []
-        for doc_id, score in zip(valid_doc_ids, cosine_scores):
-            reranked_results.append((doc_id, score.item()))
+        for i, score in enumerate(cosine_scores):
+            reranked_results.append((doc_ids[i], score.item())) # استخدام doc_ids الأصلية بالترتيب
 
         return sorted(reranked_results, key=lambda item: item[1], reverse=True)

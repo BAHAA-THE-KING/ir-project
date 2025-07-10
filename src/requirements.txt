@@ -4,3 +4,5 @@ nltk==3.9.1
 rank-bm25==0.2.2
 joblib==1.5.1
 scikit-learn==1.6.1
+hdbscan
+umap-learn

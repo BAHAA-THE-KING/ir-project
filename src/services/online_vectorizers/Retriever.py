@@ -8,7 +8,7 @@ class Retriever:
     def search(self, dataset_name: str, query: str, top_k: int = 10, with_index: bool = True) -> list[tuple[str, float, str]]:
         raise NotImplementedError()
     
-    def evaluateNDCG(self, dataset_name, queries, qrels, docs, K = 10, print_more = False):
+    def evaluateNDCG(self, dataset_name, queries, qrels, docs, K = 10, print_more = False, with_index: bool = True):
         nDCG = []
 
         for i in range(len(queries)):
@@ -19,7 +19,7 @@ class Retriever:
                 print(f"Query: {preprocess_text(query.text)}")
             
             # Search
-            results = self.search(dataset_name, query.text, K, True)
+            results = self.search(dataset_name, query.text, K, with_index)
             if print_more:
                 for i, res in enumerate(results):
                     print(f"Result #{i} {res[1]}: {res[2]}")
