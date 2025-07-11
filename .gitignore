@@ -107,3 +107,4 @@ cython_debug/
 # OS files
 .DS_Store
 Thumbs.db 
+notebooks/IR Environment Setup.ipynb
