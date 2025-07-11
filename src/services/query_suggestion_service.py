@@ -12,10 +12,10 @@ from nltk.tokenize import word_tokenize
 import re 
 from spellchecker import SpellChecker 
 
-from loader import load_dataset, load_queries_and_qrels 
-from services.processing.text_preprocessor import TextPreprocessor 
-from services.online_vectorizers.embedding import Embedding_online 
-from database.db_connector import DBConnector 
+from src.loader import load_dataset, load_queries_and_qrels
+from src.services.processing.text_preprocessor import TextPreprocessor
+from src.services.online_vectorizers.embedding import Embedding_online
+from src.database.db_connector import DBConnector
 
 INDEX_SAVE_PATH_BASE = "./data" 
 N_GRAM_CHROMADB_PATH = "./data/chroma_db_suggestions" 
@@ -296,33 +296,64 @@ class QuerySuggestionService:
         
         candidate_suggestions_with_details = []
 
-        if search_results and search_results.get('ids') and search_results.get('metadatas') and search_results.get('distances'):
+        if (
+            search_results and
+            search_results.get('ids') is not None and
+            search_results.get('metadatas') is not None and
+            search_results.get('distances') is not None and
+            isinstance(search_results['ids'], list) and
+            isinstance(search_results['metadatas'], list) and
+            isinstance(search_results['distances'], list) and
+            len(search_results['ids']) > 0 and
+            len(search_results['metadatas']) > 0 and
+            len(search_results['distances']) > 0
+        ):
             for i in range(len(search_results['ids'][0])):
-                gram_text = search_results['metadatas'][0][i]['text']
-                source_refs_str = search_results['metadatas'][0][i]['sources'] 
-                distance = search_results['distances'][0][i]
-                embedding_dim = self.embedding_model.get_sentence_embedding_dimension()
-                similarity = 1 - (distance / (embedding_dim**0.5)) if embedding_dim else 1 - distance 
+                try:
+                    gram_text = search_results['metadatas'][0][i]['text']
+                    source_refs_str = search_results['metadatas'][0][i]['sources']
+                    distance = search_results['distances'][0][i]
+                    embedding_dim = self.embedding_model.get_sentence_embedding_dimension()
+                    similarity = 1 - (distance / (embedding_dim**0.5)) if embedding_dim else 1 - distance
 
-                source_references = set()
-                if isinstance(source_refs_str, str):
-                    for ref_str in source_refs_str.split(','):
-                        if ref_str:
-                            try:
-                                sid, stype = ref_str.split(':', 1)
-                                source_references.add((sid, stype))
-                            except ValueError:
-                                pass 
+                    source_references = set()
+                    if isinstance(source_refs_str, str):
+                        for ref_str in source_refs_str.split(','):
+                            if ref_str:
+                                try:
+                                    sid, stype = ref_str.split(':', 1)
+                                    source_references.add((sid, stype))
+                                except ValueError:
+                                    pass
 
-                candidate_suggestions_with_details.append((gram_text, similarity, source_references))
+                    candidate_suggestions_with_details.append((gram_text, similarity, source_references))
+                except Exception:
+                    continue
 
         COUNT_WEIGHT = 0.1 
         for i, (gram_text, sim, refs) in enumerate(candidate_suggestions_with_details):
-            if search_results and search_results.get('metadatas') and search_results['metadatas'][0] and isinstance(search_results['metadatas'][0][i], dict):
-                original_gram_count = search_results['metadatas'][0][i].get('count', 0) 
-            else:
-                original_gram_count = 0
-            weighted_score = sim + COUNT_WEIGHT * np.log1p(original_gram_count)
+            original_gram_count = 0
+            if (
+                search_results and
+                search_results.get('metadatas') is not None and
+                isinstance(search_results['metadatas'], list) and
+                len(search_results['metadatas']) > 0 and
+                isinstance(search_results['metadatas'][0], list) and
+                len(search_results['metadatas'][0]) > i and
+                isinstance(search_results['metadatas'][0][i], dict)
+            ):
+                val = search_results['metadatas'][0][i].get('count', 0)
+                if val is not None:
+                    try:
+                        original_gram_count = float(val)
+                    except Exception:
+                        original_gram_count = 0
+                else:
+                    original_gram_count = 0
+            try:
+                weighted_score = sim + COUNT_WEIGHT * np.log1p(original_gram_count)
+            except Exception:
+                weighted_score = sim
             candidate_suggestions_with_details[i] = (gram_text, weighted_score, refs)
 
 
