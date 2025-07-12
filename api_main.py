@@ -19,11 +19,27 @@ from src.gui.ir_engine import IREngine, SearchModel
 from src.config import DATASETS
 from src.services.query_suggestion_service import QuerySuggestionService
 from src.database.db_connector import DBConnector
+from fastapi import Request
+import logging
+
+# Set up logging for timing
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(
     title="Information Retrieval System API",
     description="API for searching documents using various IR models."
 )
+
+# --- Timing Middleware ---
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    import time
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    logging.info(f"[TIMING] {request.method} {request.url.path} took {process_time:.4f} seconds")
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
 
 # Initialize the IR Engine globally to maintain state across requests
 ir_engine = IREngine()
@@ -56,7 +72,6 @@ class SearchRequest(BaseModel):
     top_k: int = 10
     use_inverted_index: bool = False # For TF-IDF/BM25
     use_vector_store: bool = False # For Embedding models
-    include_cluster_info: bool = False # For future cluster integration
 
 class SearchResultItem(BaseModel):
     doc_id: str
@@ -112,13 +127,13 @@ async def perform_search(request: SearchRequest):
     - **top_k**: The number of top relevant documents to retrieve (default: 10).
     - **use_inverted_index**: Boolean indicating whether to use an inverted index for TF-IDF/BM25 models (default: False).
     - **use_vector_store**: Boolean indicating whether to use a vector store for Embedding models (default: False).
-    - **include_cluster_info**: Boolean for future functionality to include cluster information in results (default: False).
     """
     start_time = time.time()
     try:
         # Switch to the requested dataset before searching
         ir_engine.change_dataset(request.dataset)
         # Call the /preprocess endpoint to get the preprocessed query
+        preprocess_start = time.time()
         async with httpx.AsyncClient() as client:
             preprocess_response = await client.post(
                 "http://127.0.0.1:8000/preprocess",
@@ -126,25 +141,28 @@ async def perform_search(request: SearchRequest):
             )
             preprocess_data = preprocess_response.json()
             preprocessed_query = preprocess_data["preprocessed"]
+        preprocess_time = time.time() - preprocess_start
         # Use the preprocessed query for searching (join tokens back to string if needed)
         query_for_search = " ".join(preprocessed_query)
+        search_start = time.time()
         results = ir_engine.search(
             model_name=request.model,
             query=query_for_search,
             top_k=request.top_k,
             use_inverted_index=request.use_inverted_index,
             use_vector_store=request.use_vector_store,
-            include_cluster_info=request.include_cluster_info
         )
+        search_time = time.time() - search_start
         formatted_results = [
             SearchResultItem(doc_id=str(item[0]), score=float(item[1]), snippet=str(item[2]))
             for item in results
         ]
         end_time = time.time()
-        time_taken = end_time - start_time
+        total_time = end_time - start_time
+        logging.info(f"[TIMING] /search: preprocess={preprocess_time:.4f}s, search={search_time:.4f}s, total={total_time:.4f}s")
         return SearchResponse(
             query=request.query,
-            time_taken=time_taken,
+            time_taken=total_time,
             results=formatted_results
         )
     except ValueError as e:
@@ -181,9 +199,12 @@ class SuggestResponse(BaseModel):
 # --- Suggestion Endpoint ---
 @app.post("/suggest", response_model=SuggestResponse, summary="Get query suggestions for autocomplete")
 async def suggest_query(request: SuggestRequest):
+    start_time = time.time()
     try:
         suggestion_service = get_suggestion_service(request.dataset)
         suggestions = suggestion_service.get_suggestions(request.query, top_k=request.top_k)
+        time_taken = time.time() - start_time
+        logging.info(f"[TIMING] /suggest: time_taken={time_taken:.4f}s")
         return SuggestResponse(suggestions=[SuggestionItem(suggestion=s[0], snippet=s[1]) for s in suggestions])
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Suggestion failed: {str(e)}")

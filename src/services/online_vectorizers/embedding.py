@@ -125,19 +125,21 @@ import chromadb
 from sentence_transformers import SentenceTransformer, util
 import numpy as np
 import torch 
-from loader import load_dataset
-from services.processing.text_preprocessor import TextPreprocessor
-from services.online_vectorizers.Retriever import Retriever
+from src.loader import load_dataset
+from src.services.processing.text_preprocessor import TextPreprocessor
+from src.services.online_vectorizers.Retriever import Retriever
+import __main__
+setattr(__main__, 'TextPreprocessor', TextPreprocessor)
 
 class Embedding_online(Retriever):
-    __embeddingInstance__ : dict[str, any] = {}
+    __embeddingInstance__ : dict[str, object] = {}
     __collection_instance__: dict = {}
     __modelInstance__ = None
 
     @staticmethod
     def __loadModelInstance__():
         if Embedding_online.__modelInstance__ == None:
-            # تأكد أن هذا المسار صحيح للموديل الخاص بك في Google Drive
+          
             Embedding_online.__modelInstance__ = SentenceTransformer("all-MiniLM-L6-v2") 
         return Embedding_online.__modelInstance__
 
@@ -152,7 +154,7 @@ class Embedding_online(Retriever):
     def __get_collection__(dataset_name: str):
         if dataset_name not in Embedding_online.__collection_instance__:
             print(f"Connecting to ChromaDB and getting collection: {dataset_name}_embeddings...")
-            client = chromadb.PersistentClient(path="chroma_db")
+            client = chromadb.PersistentClient(path="./chroma_db")
             Embedding_online.__collection_instance__[dataset_name] = client.get_collection(name=f"{dataset_name}_embeddings")
         return Embedding_online.__collection_instance__[dataset_name]
 
@@ -163,30 +165,38 @@ class Embedding_online(Retriever):
             return self.embedding_search(dataset_name, query, top_k)
 
     def embedding_search(self, dataset_name: str, query: str, top_k: int):
+        print("DEBUG: embedding_search called for dataset:", dataset_name)
+        print("DEBUG: About to load bert_embeddings.npy")
         model = Embedding_online.__loadModelInstance__()
         document_embeddings = Embedding_online.__loadInstance__(dataset_name)
+        print("DEBUG: bert_embeddings.npy loaded")
+        print("DEBUG: About to load docs with load_dataset")
         docs = load_dataset(dataset_name)
-        
-        # التغيير هنا: دمج التوكنات إلى سلسلة نصية واحدة قبل التشفير
+        print("DEBUG: docs loaded, number of docs:", len(docs))
+
         processedQueryTokens = TextPreprocessor.getInstance().preprocess_text(query, remove_stopwords_flag=False)
-        processedQuery = " ".join(processedQueryTokens) 
-        
-        query_embedding = model.encode(processedQuery, convert_to_tensor=True) # أضف convert_to_tensor=True هنا
-        
-        cos_scores = util.cos_sim(query_embedding, torch.tensor(document_embeddings))[0] # استخدم query_embedding مباشرة
+        processedQuery = " ".join(processedQueryTokens)
+
+        # Ensure both embeddings are on the same device
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        query_embedding = model.encode(processedQuery, convert_to_tensor=True, device=device)
+        doc_embeddings_tensor = torch.tensor(document_embeddings, device=device)
+
+        cos_scores = util.cos_sim(query_embedding, doc_embeddings_tensor)[0]
         top_results = torch.topk(cos_scores, k=top_k)
         results = []
         for score, idx in zip(top_results[0], top_results[1]):
             doc_id = docs[idx].doc_id
-            doc_text = docs[idx].text[:100] + "..." 
+            doc_text = docs[idx].text[:100] + "..."
             results.append((doc_id, score.item(), doc_text))
         return results
 
     def embedding_vectors_search(self, dataset_name: str, query: str, top_k: int):
+        print("DEBUG: embedding_vectors_search called for dataset:", dataset_name)
         model = Embedding_online.__loadModelInstance__()
         collection = Embedding_online.__get_collection__(dataset_name)
         
-        # التغيير هنا: دمج التوكنات إلى سلسلة نصية واحدة قبل التشفير
+
         processedQueryTokens = TextPreprocessor.getInstance().preprocess_text(query, remove_stopwords_flag=False)
         processedQuery = " ".join(processedQueryTokens) 
         

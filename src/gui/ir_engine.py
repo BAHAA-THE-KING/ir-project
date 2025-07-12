@@ -102,6 +102,13 @@ class IREngine:
         print(f"Dataset loaded successfully. Documents: {len(self.docs)}")
         # Ensure TFIDF model is loaded for this dataset
         TFIDF_online.__loadInstance__(dataset_name)
+        # Ensure BM25 model is loaded for this dataset
+        from src.services.online_vectorizers.bm25 import BM25_online
+        BM25_online.__loadInstance__(dataset_name)
+        # Ensure Embedding model is loaded for this dataset
+        from src.services.online_vectorizers.embedding import Embedding_online
+        Embedding_online.__loadModelInstance__()
+        Embedding_online.__loadInstance__(dataset_name)
     
     def get_available_datasets(self) -> List[str]:
         """Get list of available dataset names."""
