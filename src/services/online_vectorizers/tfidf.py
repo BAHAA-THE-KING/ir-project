@@ -2,7 +2,9 @@ import dill
 import joblib
 import numpy as np
 from loader import load_dataset
-from services.processing.text_preprocessor import TextPreprocessor
+from src.services.processing.text_preprocessor import TextPreprocessor
+import __main__
+setattr(__main__, 'TextPreprocessor', TextPreprocessor)
 from sklearn.metrics.pairwise import cosine_similarity
 from services.online_vectorizers.Retriever import Retriever
 from services.online_vectorizers.inverted_index import InvertedIndex

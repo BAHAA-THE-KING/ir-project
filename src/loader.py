@@ -1,5 +1,5 @@
 import ir_datasets
-from config import DATASETS
+from src.config import DATASETS
 
 from typing import TypeAlias
 

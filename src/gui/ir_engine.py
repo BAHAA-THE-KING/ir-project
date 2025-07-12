@@ -9,7 +9,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.config import DATASETS, DEFAULT_DATASET
 from src.loader import load_dataset_with_queries # Ensure this import is correct based on your loader.py
-from src.services.online_vectorizers.hybrid import hybrid_search # hybrid_search is a standalone function
 from src.services.online_vectorizers.bm25 import BM25_online # Import the class
 from src.services.online_vectorizers.tfidf import TFIDF_online # Import the class
 from src.services.online_vectorizers.embedding import Embedding_online # Import the class
@@ -48,13 +47,19 @@ class IREngine:
         """
         print(f"Searching for query: '{query}' using model: {model_name} (inverted_index={use_inverted_index}, vector_store={use_vector_store}, cluster_info={include_cluster_info})")
         if model_name == SearchModel.HYBRID.value:
-            # Hybrid search might not directly use 'with_index' or have its own internal logic.
-            # We must return (doc_id, score, snippet) tuples.
-            hybrid_results = hybrid_search(query, self.docs, self.queries, self.qrels, top_k)
-            # If hybrid_search returns (doc_id, score), add a snippet from doc text
+            # Hybrid search: rerank, then fetch snippet for each doc
+            from src.services.online_vectorizers.hybrid import Hybrid_online
+            hybrid_service = Hybrid_online()
+            hybrid_results = hybrid_service.search(self.current_dataset, query, top_k, with_index=True)
             results = []
-            for doc_id, score in hybrid_results:
-                snippet = self.docs[doc_id].text[:80] + "..." if doc_id in self.docs else ""
+            for item in hybrid_results:
+                if len(item) == 2:
+                    doc_id, score = item
+                    snippet = self.docs[doc_id].text[:80] + "..." if doc_id in self.docs else ""
+                elif len(item) == 3:
+                    doc_id, score, snippet = item
+                else:
+                    continue
                 results.append((doc_id, score, snippet))
             return results
         elif model_name == SearchModel.BM25.value:
@@ -62,7 +67,20 @@ class IREngine:
         elif model_name == SearchModel.TFIDF.value:
             return TFIDF_online().search(self.current_dataset, query, top_k, with_index=use_inverted_index)
         elif model_name == SearchModel.EMBEDDING.value:
-            return Embedding_online().search(self.current_dataset, query, top_k, with_index=use_vector_store)
+            embedding_results = Embedding_online().search(self.current_dataset, query, top_k, with_index=use_vector_store)
+            if not embedding_results or not isinstance(embedding_results, list):
+                return []
+            results = []
+            for item in embedding_results:
+                if len(item) == 2:
+                    doc_id, score = item
+                    snippet = self.docs[doc_id].text[:80] + "..." if doc_id in self.docs else ""
+                elif len(item) == 3:
+                    doc_id, score, snippet = item
+                else:
+                    continue
+                results.append((doc_id, score, snippet))
+            return results
         else:
             raise ValueError(f"Model {model_name} not supported for search.")
     
@@ -72,9 +90,19 @@ class IREngine:
         if dataset_name not in DATASETS:
             raise ValueError(f"Dataset {dataset_name} not found")
         
-        # Load docs, queries, and qrels
-        docs_list, queries, qrels = load_dataset_with_queries(dataset_name)
-        
+        # Load docs from the database using the global db_connector
+        from src.database.db_connector import DBConnector
+        from src.loader import Doc
+        try:
+            from api_main import db_connector
+        except ImportError:
+            # fallback for non-api_main usage
+            db_connector = DBConnector("./ir_project_data.db")
+            db_connector.connect()
+        docs_tuples = db_connector.get_all_document_ids_and_texts(dataset_name, cleaned=True)
+        docs_list = [Doc(doc_id=doc_id, text=text) for doc_id, text in docs_tuples]
+        # Load queries and qrels from ir_datasets as before
+        _, queries, qrels = load_dataset_with_queries(dataset_name)
         # Convert the list of Docs to a dictionary for efficient lookup by doc_id
         self.docs = {doc.doc_id: doc for doc in docs_list}
         # Convert queries and qrels to dicts for hybrid_search compatibility
@@ -84,6 +112,13 @@ class IREngine:
         print(f"Dataset loaded successfully. Documents: {len(self.docs)}")
         # Ensure TFIDF model is loaded for this dataset
         TFIDF_online.__loadInstance__(dataset_name)
+        # Ensure BM25 model is loaded for this dataset
+        from src.services.online_vectorizers.bm25 import BM25_online
+        BM25_online.__loadInstance__(dataset_name)
+        # Ensure Embedding model is loaded for this dataset
+        from src.services.online_vectorizers.embedding import Embedding_online
+        Embedding_online.__loadModelInstance__()
+        Embedding_online.__loadInstance__(dataset_name)
     
     def get_available_datasets(self) -> List[str]:
         """Get list of available dataset names."""
