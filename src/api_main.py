@@ -1,95 +1,68 @@
+import sys
+import os
+
+project_root = os.path.dirname(os.path.abspath(__file__))
+src_path = os.path.join(project_root, 'src')
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# Now import from src
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Tuple
 import time
-import sys
-import os
-from src.services.processing.text_preprocessor import TextPreprocessor
 import httpx
+from src.services.processing.text_preprocessor import TextPreprocessor
+from src.gui.ir_engine import IREngine, SearchModel
+from src.config import DATASETS
+from src.services.query_suggestion_service import QuerySuggestionService
+from src.database.db_connector import DBConnector
+from fastapi import Request
+import logging
 
-# Adjust sys.path to allow imports from the 'src' directory
-# This assumes api_main.py is in the project root, and 'src' is a subdirectory.
-project_root = os.path.dirname(os.path.abspath(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-if os.path.join(project_root, 'src') not in sys.path:
-    sys.path.insert(0, os.path.join(project_root, 'src'))
-
-try:
-    from src.gui.ir_engine import IREngine, SearchModel
-    from src.config import DATASETS
-    print("Successfully imported IREngine and DATASETS from src.")
-except Exception as e:
-    print(f"Error importing modules: {e}. Please ensure your Python path is correctly configured.")
-    print("If you are running this from a different directory, you might need to manually add your project root and src directory to sys.path.")
-    # Fallback/Mock for demonstration if imports fail due to environment setup
-    # This MockIREngine is updated to match the new search signature required by the API.
-    class SearchModel:
-        TFIDF = "TF-IDF"
-        BM25 = "BM25"
-        HYBRID = "Hybrid"
-        EMBEDDING = "Embedding"
-        @staticmethod
-        def list_values():
-            return [SearchModel.TFIDF, SearchModel.BM25, SearchModel.HYBRID, SearchModel.EMBEDDING]
-
-    class MockIREngine:
-        def __init__(self):
-            print("Using Mock IREngine.")
-            self.current_dataset = "antique" # Mock dataset active by default
-            self.mock_datasets = {
-                "antique": {"name": "antique", "description": "Question-answer dataset (mock)", "ir_datasets_id": "antique", "ir_datasets_test_id": "antique/test/non-offensive"},
-            }
-            self.docs = {
-                "doc1": type('obj', (object,), {'doc_id': 'doc1', 'text': 'This is the full text of document 1 for the mock search.'}),
-                "doc2": type('obj', (object,), {'doc_id': 'doc2', 'text': 'Here is the content of document number 2 in the mock system.'}),
-                "doc3": type('obj', (object,), {'doc_id': 'doc3', 'text': 'Document 3 contains some interesting information for testing purposes.'})
-            }
-            self.queries = []
-            self.qrels = []
-
-        def get_available_datasets(self) -> List[str]:
-            return list(self.mock_datasets.keys())
-
-        def get_dataset_stats(self, dataset_name: str) -> Dict:
-            # Simulate stats for mock datasets, now takes dataset_name
-            dataset_config = self.mock_datasets.get(dataset_name, {})
-            return {
-                "name": dataset_config.get("name", "Unknown"),
-                "description": dataset_config.get("description", "No description"),
-                "num_docs": len(self.docs) * 10, # Mock large numbers
-                "num_queries": 50,
-                "num_qrels": 200
-            }
-
-        # Updated search method to match new signature
-        def search(self, model_name: str, query: str, top_k: int = 10,
-                   use_inverted_index: bool = False, use_vector_store: bool = False,
-                   include_cluster_info: bool = False) -> List[Tuple[str, float, str]]:
-            print(f"Mock search for '{query}' with model '{model_name}'. Inverted Index: {use_inverted_index}, Vector Store: {use_vector_store}, Cluster Info: {include_cluster_info}")
-            # Simulate some results based on mock documents
-            mock_results = [
-                ("doc1", 0.95, self.docs["doc1"].text[:80] + "..."),
-                ("doc2", 0.88, self.docs["doc2"].text[:80] + "..."),
-                ("doc3", 0.75, self.docs["doc3"].text[:80] + "...")
-            ]
-            return [(item[0], item[1], item[2]) for item in mock_results[:top_k]]
-
-        def get_document(self, doc_id: str) -> Optional[str]:
-            print(f"Mock: Getting document {doc_id}")
-            doc_obj = self.docs.get(doc_id)
-            return doc_obj.text if doc_obj else None
-
-    IREngine = MockIREngine
-    DATASETS = {k: v for k, v in IREngine().mock_datasets.items()} # Use mock datasets for consistency
+# Set up logging for timing
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(
     title="Information Retrieval System API",
     description="API for searching documents using various IR models."
 )
 
+# --- Timing Middleware ---
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    import time
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    logging.info(f"[TIMING] {request.method} {request.url.path} took {process_time:.4f} seconds")
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
+
 # Initialize the IR Engine globally to maintain state across requests
 ir_engine = IREngine()
+
+# Singleton instances
+preprocessor = TextPreprocessor.getInstance()
+db_path = "./ir_project_data.db"
+db_connector = DBConnector(db_path)
+db_connector.connect()
+
+# Preload QuerySuggestionService for all datasets
+suggestion_services = {}
+for dataset in DATASETS.keys():
+    try:
+        suggestion_services[dataset] = QuerySuggestionService(dataset, preprocessor, db_connector)
+        print(f"Loaded QuerySuggestionService for dataset: {dataset}")
+    except Exception as e:
+        print(f"Failed to load QuerySuggestionService for dataset {dataset}: {e}")
+
+def get_suggestion_service(dataset):
+    if dataset not in suggestion_services:
+        raise ValueError(f"Dataset '{dataset}' is not available or failed to load.")
+    return suggestion_services[dataset]
 
 # Pydantic models for request and response validation
 class SearchRequest(BaseModel):
@@ -99,7 +72,6 @@ class SearchRequest(BaseModel):
     top_k: int = 10
     use_inverted_index: bool = False # For TF-IDF/BM25
     use_vector_store: bool = False # For Embedding models
-    include_cluster_info: bool = False # For future cluster integration
 
 class SearchResultItem(BaseModel):
     doc_id: str
@@ -155,13 +127,13 @@ async def perform_search(request: SearchRequest):
     - **top_k**: The number of top relevant documents to retrieve (default: 10).
     - **use_inverted_index**: Boolean indicating whether to use an inverted index for TF-IDF/BM25 models (default: False).
     - **use_vector_store**: Boolean indicating whether to use a vector store for Embedding models (default: False).
-    - **include_cluster_info**: Boolean for future functionality to include cluster information in results (default: False).
     """
     start_time = time.time()
     try:
         # Switch to the requested dataset before searching
         ir_engine.change_dataset(request.dataset)
         # Call the /preprocess endpoint to get the preprocessed query
+        preprocess_start = time.time()
         async with httpx.AsyncClient() as client:
             preprocess_response = await client.post(
                 "http://127.0.0.1:8000/preprocess",
@@ -169,25 +141,28 @@ async def perform_search(request: SearchRequest):
             )
             preprocess_data = preprocess_response.json()
             preprocessed_query = preprocess_data["preprocessed"]
+        preprocess_time = time.time() - preprocess_start
         # Use the preprocessed query for searching (join tokens back to string if needed)
         query_for_search = " ".join(preprocessed_query)
+        search_start = time.time()
         results = ir_engine.search(
             model_name=request.model,
             query=query_for_search,
             top_k=request.top_k,
             use_inverted_index=request.use_inverted_index,
             use_vector_store=request.use_vector_store,
-            include_cluster_info=request.include_cluster_info
         )
+        search_time = time.time() - search_start
         formatted_results = [
             SearchResultItem(doc_id=str(item[0]), score=float(item[1]), snippet=str(item[2]))
             for item in results
         ]
         end_time = time.time()
-        time_taken = end_time - start_time
+        total_time = end_time - start_time
+        logging.info(f"[TIMING] /search: preprocess={preprocess_time:.4f}s, search={search_time:.4f}s, total={total_time:.4f}s")
         return SearchResponse(
             query=request.query,
-            time_taken=time_taken,
+            time_taken=total_time,
             results=formatted_results
         )
     except ValueError as e:
@@ -209,8 +184,37 @@ async def get_document_content(doc_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving document: {str(e)}")
 
+class SuggestRequest(BaseModel):
+    query: str
+    dataset: str
+    top_k: int = 10
+
+class SuggestionItem(BaseModel):
+    suggestion: str
+    snippet: str
+
+class SuggestResponse(BaseModel):
+    suggestions: List[SuggestionItem]
+
+# --- Suggestion Endpoint ---
+@app.post("/suggest", response_model=SuggestResponse, summary="Get query suggestions for autocomplete")
+async def suggest_query(request: SuggestRequest):
+    start_time = time.time()
+    try:
+        suggestion_service = get_suggestion_service(request.dataset)
+        suggestions = suggestion_service.get_suggestions(request.query, top_k=request.top_k)
+        time_taken = time.time() - start_time
+        logging.info(f"[TIMING] /suggest: time_taken={time_taken:.4f}s")
+        return SuggestResponse(suggestions=[SuggestionItem(suggestion=s[0], snippet=s[1]) for s in suggestions])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Suggestion failed: {str(e)}")
+
+@app.on_event("shutdown")
+def shutdown_event():
+    db_connector.close()
+
 # To run this FastAPI application:
 # 1. Save the code as api_main.py in your project's root directory.
-# 2. Make sure src/gui/ir_engine.py has its 'search' method updated as described above.
+# 2. Make sure src/ir_engine.py has its 'search' method updated as described above.
 # 3. Open your terminal in the project root and run: uvicorn api_main:app --reload --port 8000
 # 4. Access interactive docs at: http://127.0.0.1:8000/docs
