@@ -90,9 +90,19 @@ class IREngine:
         if dataset_name not in DATASETS:
             raise ValueError(f"Dataset {dataset_name} not found")
         
-        # Load docs, queries, and qrels
-        docs_list, queries, qrels = load_dataset_with_queries(dataset_name)
-        
+        # Load docs from the database using the global db_connector
+        from src.database.db_connector import DBConnector
+        from src.loader import Doc
+        try:
+            from api_main import db_connector
+        except ImportError:
+            # fallback for non-api_main usage
+            db_connector = DBConnector("./ir_project_data.db")
+            db_connector.connect()
+        docs_tuples = db_connector.get_all_document_ids_and_texts(dataset_name, cleaned=True)
+        docs_list = [Doc(doc_id=doc_id, text=text) for doc_id, text in docs_tuples]
+        # Load queries and qrels from ir_datasets as before
+        _, queries, qrels = load_dataset_with_queries(dataset_name)
         # Convert the list of Docs to a dictionary for efficient lookup by doc_id
         self.docs = {doc.doc_id: doc for doc in docs_list}
         # Convert queries and qrels to dicts for hybrid_search compatibility
