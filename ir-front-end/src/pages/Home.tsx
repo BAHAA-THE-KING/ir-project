@@ -18,7 +18,7 @@ import { useSearch, SearchAlgorithm, Dataset } from "../context/SearchContext";
 
 const Home: React.FC = () => {
   const [query, setQuery] = useState("");
-  const [algorithm, setAlgorithm] = useState<SearchAlgorithm>("hybrid");
+  const [algorithm, setAlgorithm] = useState<SearchAlgorithm>("HYBRID");
   const [dataset, setDataset] = useState<Dataset>("antique");
   const [resultCount, setResultCount] = useState(10);
   const [useIndexing, setUseIndexing] = useState(true);
@@ -80,21 +80,21 @@ const Home: React.FC = () => {
   // Handle algorithm-specific option constraints
   useEffect(() => {
     switch (algorithm) {
-      case "tf-idf":
+      case "TF-IDF":
         // TF-IDF: Disable vector store (incompatible with traditional term frequency)
         setUseVectorStore(false);
         break;
-      case "embedding":
+      case "EMBEDDING":
         // Embedding: Disable indexing (pure vector-based approach)
         setUseIndexing(false);
         // Enable vector store as it's essential for embeddings
         setUseVectorStore(false);
         break;
-      case "bm25":
+      case "BM25":
         // BM25: Disable vector store (traditional ranking function)
         setUseVectorStore(false);
         break;
-      case "hybrid":
+      case "HYBRID":
         // Hybrid: All options available (combines multiple approaches)
         break;
     }
@@ -103,13 +103,13 @@ const Home: React.FC = () => {
   // Check if an option should be disabled based on current algorithm
   const isOptionDisabled = (option: "indexing" | "vectorStore") => {
     switch (algorithm) {
-      case "tf-idf":
+      case "TF-IDF":
         return option === "vectorStore";
-      case "embedding":
+      case "EMBEDDING":
         return option === "indexing";
-      case "bm25":
+      case "BM25":
         return option === "vectorStore";
-      case "hybrid":
+      case "HYBRID":
         return false;
       default:
         return false;
@@ -144,25 +144,25 @@ const Home: React.FC = () => {
 
   const algorithmOptions = [
     {
-      value: "tf-idf",
+      value: "TF-IDF",
       label: "TF-IDF",
       icon: Target,
       description: "Term frequency-inverse document frequency",
     },
     {
-      value: "embedding",
+      value: "EMBEDDING",
       label: "Embedding",
       icon: Sparkles,
       description: "Semantic vector search",
     },
     {
-      value: "bm25",
+      value: "BM25",
       label: "BM25",
       icon: Zap,
       description: "Best matching ranking function",
     },
     {
-      value: "hybrid",
+      value: "HYBRID",
       label: "Hybrid",
       icon: Shuffle,
       description: "Combined algorithm approach",

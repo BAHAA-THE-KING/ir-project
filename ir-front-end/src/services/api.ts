@@ -3,8 +3,8 @@ import { API_CONFIG, buildApiUrl } from '../config/api';
 
 export interface SearchRequest {
   query: string;
-  algorithm: 'tf-idf' | 'embedding' | 'bm25' | 'hybrid';
-  dataset: 'antique' | 'beir/quora';
+  model: 'TF-IDF' | 'EMBEDDING' | 'BM25' | 'HYBRID';
+  dataset_name: 'antique' | 'beir/quora';
   resultCount: number;
   useIndexing: boolean;
   useVectorStore: boolean;

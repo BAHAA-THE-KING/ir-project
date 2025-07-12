@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { searchDocuments, SearchRequest, SearchResponse } from '../services/api';
 
-export type SearchAlgorithm = 'tf-idf' | 'embedding' | 'bm25' | 'hybrid';
+export type SearchAlgorithm = 'TF-IDF' | 'EMBEDDING' | 'BM25' | 'HYBRID';
 export type Dataset = 'antique' | 'beir/quora';
 
 export interface SearchResult {
@@ -15,8 +15,8 @@ export interface SearchResult {
 
 export interface SearchState {
   query: string;
-  algorithm: SearchAlgorithm;
-  dataset: Dataset;
+  model: SearchAlgorithm;
+  dataset_name: Dataset;
   resultCount: number;
   useIndexing: boolean;
   useVectorStore: boolean;
@@ -28,7 +28,7 @@ export interface SearchState {
 interface SearchContextType {
   searchState: SearchState;
   setSearchState: (state: Partial<SearchState>) => void;
-  performSearch: (query: string, algorithm: SearchAlgorithm, dataset: Dataset, resultCount: number, useIndexing: boolean, useVectorStore: boolean) => void;
+  performSearch: (query: string, model: SearchAlgorithm, dataset_name: Dataset, resultCount: number, useIndexing: boolean, useVectorStore: boolean) => void;
 }
 
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
@@ -379,8 +379,8 @@ Reinforcement learning continues to show promise in solving complex sequential d
 export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [searchState, setSearchStateInternal] = useState<SearchState>({
     query: '',
-    algorithm: 'hybrid',
-    dataset: 'antique',
+    model: 'TF-IDF',
+    dataset_name: 'antique',
     resultCount: 10,
     useIndexing: true,
     useVectorStore: false,
@@ -393,14 +393,14 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setSearchStateInternal(prev => ({ ...prev, ...newState }));
   };
 
-  const performSearch = async (query: string, algorithm: SearchAlgorithm, dataset: Dataset, resultCount: number, useIndexing: boolean, useVectorStore: boolean) => {
+  const performSearch = async (query: string, model: SearchAlgorithm, dataset_name: Dataset, resultCount: number, useIndexing: boolean, useVectorStore: boolean) => {
     const startTime = Date.now();
     
     try {
       const searchRequest: SearchRequest = {
         query,
-        algorithm,
-        dataset,
+        model,
+        dataset_name,
         resultCount,
         useIndexing,
         useVectorStore
@@ -410,8 +410,8 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       
       setSearchState({
         query,
-        algorithm,
-        dataset,
+        model,
+        dataset_name,
         resultCount,
         useIndexing,
         useVectorStore,
@@ -432,8 +432,8 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       
       setSearchState({
         query,
-        algorithm,
-        dataset,
+        model,
+        dataset_name,
         resultCount,
         useIndexing,
         useVectorStore,
