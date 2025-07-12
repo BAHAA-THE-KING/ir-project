@@ -163,10 +163,10 @@ class Retriever:
 
             for i in range(len(queries)):
                 query = queries[i]
-                results = self.search(dataset_name, query.text, K * 10, True)
+                results = self.search(dataset_name, query.text, K, True)
                
                 # MRR calc
-                firstRank = 100
+                firstRank = 10
                 for j, res in enumerate(results):
                     if res[0] in cleaned_qrels[query.query_id] and cleaned_qrels[query.query_id][res[0]] > 0:
                         # MRR calc
@@ -179,7 +179,6 @@ class Retriever:
                 # nDCG calc
                 DCG = []
                 iDCG = []
-                results = results[:K]
                 for jj, ress in enumerate(results):
                     if ress[0] in cleaned_qrels[query.query_id] and cleaned_qrels[query.query_id][ress[0]] > 0:
                         # MAP calc
