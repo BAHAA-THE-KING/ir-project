@@ -6,6 +6,7 @@ from services.offline_vectorizers.bm25 import BM25_offline
 from services.offline_vectorizers.tfidf import tfidf_train
 from services.offline_vectorizers.embedding import download_bert, embedding_train, populate_vector_store
 from services.online_vectorizers.inverted_index import InvertedIndex
+from services.online_vectorizers.tfidf import TFIDF_online
 from services.processing.text_preprocessor import TextPreprocessor
 from services.online_vectorizers.hybrid import Hybrid_online
 import dill
@@ -20,8 +21,8 @@ def main():
     # dataset_name = 'antique'
 
     # st = time.time()
-    # docs = load_dataset(dataset_name)
-    # # docs, queries, qrels = load_dataset_with_queries(dataset_name)
+    # # docs = load_dataset(dataset_name)
+    # docs, queries, qrels = load_dataset_with_queries(dataset_name)
     # print(f"{time.time() - st}s")
     # print('Dataset loaded')
     
@@ -72,6 +73,23 @@ def main():
 
     # st = time.time()
     # print(f"MRR= {Hybrid_online().evaluateMRR(dataset_name, queries, qrels)}")
+    # print(f"{time.time() - st}s")
+
+    # print()
+    # st = time.time()
+    # print(f"MRR= {TFIDF_online().evaluateMRR(dataset_name, queries, qrels)}")
+    # print(f"{time.time() - st}s")
+    # print()
+    # st = time.time()
+    # print(f"MAP= {TFIDF_online().evaluateMAP(dataset_name, queries, qrels, docs)}")
+    # print(f"{time.time() - st}s")
+    # print()
+    # st = time.time()
+    # print(f"nDCG= {TFIDF_online().evaluateNDCG(dataset_name, queries, qrels, docs)}")
+    # print(f"{time.time() - st}s")
+    # print()
+    # st = time.time()
+    # print(f"All= {TFIDF_online().evaluateAll(dataset_name, queries, qrels)}")
     # print(f"{time.time() - st}s")
     pass
 
