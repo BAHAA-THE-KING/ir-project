@@ -39,9 +39,9 @@ class Hybrid_online(Retriever):
         #  STAGE 1: Parallel Fusion of TF-IDF and BM25
         # ==========================================================================
         
-        tfidf_results = tfidf_service.search(dataset_name, query, top_k)
+        tfidf_results = tfidf_service.search(dataset_name, query, top_k*2)
 
-        bm25_results = bm25_service.search(dataset_name, query, top_k)
+        bm25_results = bm25_service.search(dataset_name, query, top_k*2)
 
         # --- Normalize and Fuse the lexical results ---
         norm_tfidf = self.__normalize_scores__(tfidf_results)
