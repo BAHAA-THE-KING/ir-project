@@ -12,6 +12,7 @@ class Embedding_online(Retriever):
     __embeddingInstance__ : dict[str, any] = {}
     __collection_instance__: dict = {}
     __modelInstance__  = None
+    __docs__: dict = {}
 
     @staticmethod
     def __loadModelInstance__():
@@ -29,9 +30,14 @@ class Embedding_online(Retriever):
     @staticmethod
     def __get_collection__(dataset_name: str):
         if dataset_name not in Embedding_online.__collection_instance__:
-            print(f"Connecting to ChromaDB and getting collection: {dataset_name}_embeddings...")
             client = chromadb.PersistentClient(path="chroma_db")
             Embedding_online.__collection_instance__[dataset_name] = client.get_collection(name=f"{dataset_name}_embeddings")
+        return Embedding_online.__collection_instance__[dataset_name]
+
+    @staticmethod
+    def __loadDocs__(dataset_name: str):
+        if dataset_name not in Embedding_online.__docs__:
+            Embedding_online.__collection_instance__[dataset_name] = load_dataset(dataset_name)
         return Embedding_online.__collection_instance__[dataset_name]
 
     def search(self, dataset_name: str, query: str, top_k: int = 10, with_index: bool = True):
@@ -46,7 +52,7 @@ class Embedding_online(Retriever):
         document_embeddings =  Embedding_online.__loadInstance__(dataset_name)
         docs = load_dataset(dataset_name)
         processedQuery = TextPreprocessor.getInstance().preprocess_text(query)
-        query_embedding = model.encode(processedQuery)
+        query_embedding = model.encode(" ".join(processedQuery))
 
         cos_scores = util.cos_sim(torch.tensor(query_embedding), torch.tensor(document_embeddings))[0]
         top_results = torch.topk(cos_scores, k=top_k)
@@ -65,7 +71,7 @@ class Embedding_online(Retriever):
         collection = Embedding_online.__get_collection__(dataset_name)
         #process query
         processedQuery = TextPreprocessor.getInstance().preprocess_text(query)
-        query_embedding = model.encode(processedQuery)
+        query_embedding = model.encode(" ".join(processedQuery))
         search_results = collection.query(
             query_embeddings=[query_embedding],
             n_results=top_k
