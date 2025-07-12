@@ -10,7 +10,7 @@ from typing import List, Dict, Optional, Tuple
 import time
 import httpx
 from services.processing.text_preprocessor import TextPreprocessor
-from gui.ir_engine import IREngine, SearchModel
+from ir_engine import ir_engine, SearchModel
 from config import DATASETS
 # TODO: uncomment
 # from services.query_suggestion_service import QuerySuggestionService
@@ -38,11 +38,11 @@ async def add_process_time_header(request: Request, call_next):
     return response
 
 # Initialize the IR Engine globally to maintain state across requests
-ir_engine = IREngine()
+ir_engine = ir_engine()
 
 # Singleton instances
 preprocessor = TextPreprocessor.getInstance()
-db_path = "./ir_project_data.db"
+db_path = "data/ir_project_data.db"
 db_connector = DBConnector(db_path)
 db_connector.connect()
 
@@ -64,8 +64,8 @@ def get_suggestion_service(dataset):
 # Pydantic models for request and response validation
 class SearchRequest(BaseModel):
     model: str # Specify model for this search
+    dataset_name: str # Add dataset as a required string argument
     query: str
-    dataset: str # Add dataset as a required string argument
     top_k: int = 10
     use_inverted_index: bool = False # For TF-IDF/BM25
     use_vector_store: bool = False # For Embedding models
@@ -103,15 +103,6 @@ async def preprocess_query(request: PreprocessRequest):
 
 # --- API Endpoints ---
 
-# ✅ /datasets
-@app.get("/datasets", response_model=List[str], summary="Get available dataset names")
-async def get_available_datasets():
-    """
-    Retrieves a list of all available dataset names supported by the IR system.
-    """
-    return ir_engine.get_available_datasets()
-
-
 # ✅ /search
 @app.post("/search", response_model=SearchResponse, summary="Perform a search query")
 async def perform_search(request: SearchRequest):
@@ -120,15 +111,13 @@ async def perform_search(request: SearchRequest):
 
     - **model**: The search model to use (e.g., "TF-IDF", "BM25", "Hybrid", "Embedding").
     - **query**: The search query string.
-    - **dataset**: The dataset to use for the search.
+    - **dataset_name**: The dataset to use for the search.
     - **top_k**: The number of top relevant documents to retrieve (default: 10).
     - **use_inverted_index**: Boolean indicating whether to use an inverted index for TF-IDF/BM25 models (default: False).
     - **use_vector_store**: Boolean indicating whether to use a vector store for Embedding models (default: False).
     """
     start_time = time.time()
     try:
-        # Switch to the requested dataset before searching
-        ir_engine.change_dataset(request.dataset)
         # Call the /preprocess endpoint to get the preprocessed query
         preprocess_start = time.time()
         async with httpx.AsyncClient() as client:
@@ -144,6 +133,7 @@ async def perform_search(request: SearchRequest):
         search_start = time.time()
         results = ir_engine.search(
             model_name=request.model,
+            dataset_name=request.dataset_name,
             query=query_for_search,
             top_k=request.top_k,
             use_inverted_index=request.use_inverted_index,
