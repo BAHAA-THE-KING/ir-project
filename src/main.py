@@ -18,13 +18,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     
 
 def main():
-    # dataset_name = 'antique'
+    dataset_name = 'antique'
 
-    # st = time.time()
+    st = time.time()
     # # docs = load_dataset(dataset_name)
-    # docs, queries, qrels = load_dataset_with_queries(dataset_name)
-    # print(f"{time.time() - st}s")
-    # print('Dataset loaded')
+    docs, queries, qrels = load_dataset_with_queries(dataset_name)
+    print(f"{time.time() - st}s")
+    print('Dataset loaded')
     
     # st = time.time()
     # BM25_offline().bm25_train(docs, dataset_name)
@@ -75,22 +75,9 @@ def main():
     # print(f"MRR= {Hybrid_online().evaluateMRR(dataset_name, queries, qrels)}")
     # print(f"{time.time() - st}s")
 
-    # print()
-    # st = time.time()
-    # print(f"MRR= {TFIDF_online().evaluateMRR(dataset_name, queries, qrels)}")
-    # print(f"{time.time() - st}s")
-    # print()
-    # st = time.time()
-    # print(f"MAP= {TFIDF_online().evaluateMAP(dataset_name, queries, qrels, docs)}")
-    # print(f"{time.time() - st}s")
-    # print()
-    # st = time.time()
-    # print(f"nDCG= {TFIDF_online().evaluateNDCG(dataset_name, queries, qrels, docs)}")
-    # print(f"{time.time() - st}s")
-    # print()
-    # st = time.time()
-    # print(f"All= {TFIDF_online().evaluateAll(dataset_name, queries, qrels)}")
-    # print(f"{time.time() - st}s")
+    st = time.time()
+    print(f"All= {TFIDF_online().evaluateAll(dataset_name, queries, qrels)}")
+    print(f"{time.time() - st}s")
     pass
 
 if __name__ == "__main__":
