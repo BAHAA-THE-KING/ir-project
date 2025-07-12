@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { searchDocuments, SearchRequest, SearchResponse } from '../services/api';
 
 export type SearchAlgorithm = 'tf-idf' | 'embedding' | 'bm25' | 'hybrid';
 export type Dataset = 'antique' | 'beir/quora';
@@ -392,79 +393,42 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setSearchStateInternal(prev => ({ ...prev, ...newState }));
   };
 
-  const performSearch = (query: string, algorithm: SearchAlgorithm, dataset: Dataset, resultCount: number, useIndexing: boolean, useVectorStore: boolean) => {
+  const performSearch = async (query: string, algorithm: SearchAlgorithm, dataset: Dataset, resultCount: number, useIndexing: boolean, useVectorStore: boolean) => {
     const startTime = Date.now();
     
-    // Simulate search delay - indexing and vector store affect search time
-    const baseDelay = useIndexing ? 200 : 400;
-    const vectorStoreDelay = useVectorStore ? 100 : 0;
-    const datasetDelay = dataset === 'beir/quora' ? 100 : 50; // Different datasets have different processing times
-    const randomDelay = Math.random() * 300;
-    
-    setTimeout(() => {
-      let filteredResults = mockDocuments
+    try {
+      const searchRequest: SearchRequest = {
+        query,
+        algorithm,
+        dataset,
+        resultCount,
+        useIndexing,
+        useVectorStore
+      };
+
+      const searchResponse: SearchResponse = await searchDocuments(searchRequest);
+      
+      setSearchState({
+        query,
+        algorithm,
+        dataset,
+        resultCount,
+        useIndexing,
+        useVectorStore,
+        results: searchResponse.results,
+        searchTime: Date.now() - startTime,
+        totalResults: searchResponse.totalResults,
+      });
+    } catch (error) {
+      console.error('Search failed:', error);
+      // Fallback to mock data for development
+      const filteredResults = mockDocuments
         .filter(doc => 
           doc.title.toLowerCase().includes(query.toLowerCase()) ||
           doc.snippet.toLowerCase().includes(query.toLowerCase())
-        );
-
-      // Simulate dataset-specific results
-      if (dataset === 'beir/quora') {
-        // Simulate different scoring for BEIR/Quora dataset
-        filteredResults = filteredResults.map(doc => ({
-          ...doc,
-          score: Math.min(doc.score + 0.03, 1.0) // Slight boost for BEIR dataset
-        }));
-      }
-
-      // Simulate indexing impact on results quality
-      if (useIndexing) {
-        // With indexing: better scoring and potentially more relevant results
-        filteredResults = filteredResults.map(doc => ({
-          ...doc,
-          score: Math.min(doc.score + 0.05, 1.0) // Slight boost to scores
-        }));
-      } else {
-        // Without indexing: slightly lower scores to simulate less efficient search
-        filteredResults = filteredResults.map(doc => ({
-          ...doc,
-          score: Math.max(doc.score - 0.1, 0.1) // Slight reduction in scores
-        }));
-      }
-
-      // Simulate vector store impact on semantic search quality
-      if (useVectorStore) {
-        // With vector store: enhanced semantic matching and better relevance
-        filteredResults = filteredResults.map(doc => ({
-          ...doc,
-          score: Math.min(doc.score + 0.08, 1.0) // Additional boost for semantic relevance
-        }));
-        
-        // Vector store might find additional semantically similar results
-        if (query.toLowerCase().includes('ai') || query.toLowerCase().includes('artificial')) {
-          // Boost AI-related content scores when vector store is enabled
-          filteredResults = filteredResults.map(doc => {
-            if (doc.title.toLowerCase().includes('machine learning') || 
-                doc.title.toLowerCase().includes('deep learning') ||
-                doc.title.toLowerCase().includes('computer vision')) {
-              return { ...doc, score: Math.min(doc.score + 0.1, 1.0) };
-            }
-            return doc;
-          });
-        }
-      } else {
-        // Without vector store: rely on keyword matching only
-        filteredResults = filteredResults.map(doc => ({
-          ...doc,
-          score: Math.max(doc.score - 0.05, 0.1) // Slight reduction for keyword-only search
-        }));
-      }
-
-      filteredResults = filteredResults
-        .sort((a, b) => b.score - a.score) // Sort by score
+        )
+        .sort((a, b) => b.score - a.score)
         .slice(0, resultCount);
-      
-      const searchTime = Date.now() - startTime;
       
       setSearchState({
         query,
@@ -474,10 +438,10 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         useIndexing,
         useVectorStore,
         results: filteredResults,
-        searchTime,
+        searchTime: Date.now() - startTime,
         totalResults: filteredResults.length,
       });
-    }, baseDelay + vectorStoreDelay + datasetDelay + randomDelay);
+    }
   };
 
   return (
