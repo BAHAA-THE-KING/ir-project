@@ -1,8 +1,8 @@
-from services.processing.text_preprocessor import TextPreprocessor
-from services.online_vectorizers.tfidf import TFIDF_online
-from services.online_vectorizers.embedding import Embedding_online
-from services.online_vectorizers.bm25 import BM25_online
-from services.online_vectorizers.hybrid import Hybrid_online
+from src.services.processing.text_preprocessor import TextPreprocessor
+from src.services.online_vectorizers.tfidf import TFIDF_online
+from src.services.online_vectorizers.embedding import Embedding_online
+from src.services.online_vectorizers.bm25 import BM25_online
+from src.services.online_vectorizers.hybrid import Hybrid_online
 
 from typing import List, Tuple, Optional
 from enum import Enum

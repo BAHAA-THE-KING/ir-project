@@ -1,20 +1,16 @@
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 # Now import from src
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Tuple
 import time
 import httpx
-from services.processing.text_preprocessor import TextPreprocessor
-from ir_engine import ir_engine, SearchModel
-from config import DATASETS
+from src.services.processing.text_preprocessor import TextPreprocessor
+from src.ir_engine import ir_engine, SearchModel
+from src.config import DATASETS
 # TODO: uncomment
-# from services.query_suggestion_service import QuerySuggestionService
-from database.db_connector import DBConnector
+# from src.services.query_suggestion_service import QuerySuggestionService
+from src.database.db_connector import DBConnector
 from fastapi import Request
 import logging
 
@@ -24,6 +20,15 @@ logging.basicConfig(level=logging.INFO)
 app = FastAPI(
     title="Information Retrieval System API",
     description="API for searching documents using various IR models."
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
 
 # --- Timing Middleware ---
@@ -48,7 +53,7 @@ db_connector.connect()
 
 # Preload QuerySuggestionService for all datasets
 suggestion_services = {}
-for dataset in DATASETS.keys():
+for dataset in ['antique', 'quora']:
     try:
         # TODO: uncomment
         # suggestion_services[dataset] = QuerySuggestionService(dataset, preprocessor, db_connector)

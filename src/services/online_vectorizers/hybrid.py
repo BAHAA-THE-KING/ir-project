@@ -1,7 +1,7 @@
-from services.online_vectorizers.Retriever import Retriever
-from services.online_vectorizers.tfidf import TFIDF_online
-from services.online_vectorizers.bm25 import BM25_online
-from services.online_vectorizers.embedding import Embedding_online
+from src.services.online_vectorizers.Retriever import Retriever
+from src.services.online_vectorizers.tfidf import TFIDF_online
+from src.services.online_vectorizers.bm25 import BM25_online
+from src.services.online_vectorizers.embedding import Embedding_online
 
 class Hybrid_online(Retriever):
     def __normalize_scores__(self, ranked_list: list) -> list:

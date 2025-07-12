@@ -1,24 +1,8 @@
 import sqlite3
-import os
-import sys
-
-# Dynamically adjust sys.path to allow imports from the 'src' directory
-# This makes the script runnable from anywhere within the project structure,
-# assuming 'src' is a direct subdirectory of the project root.
-current_dir = os.path.dirname(os.path.abspath(__file__))
-# Navigate up until 'src' directory is found or root is reached
-project_root = current_dir
-while "src" not in os.listdir(project_root) and project_root != os.path.dirname(project_root):
-    project_root = os.path.dirname(project_root)
-
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-if os.path.join(project_root, 'src') not in sys.path:
-    sys.path.insert(0, os.path.join(project_root, 'src'))
 
 # Import necessary modules from your project
-from src.loader import load_dataset # 
-from src.services.processing.text_preprocessor import TextPreprocessor # [cite: 31, 32]
+from src.loader import load_dataset
+from src.services.processing.text_preprocessor import TextPreprocessor
 
 # Define the database file name
 DATABASE_NAME = "ir_project_data.db"

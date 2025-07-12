@@ -1,5 +1,3 @@
-# src/database/db_connector.py
-
 import sqlite3
 from typing import List, Tuple, Dict, Optional # تأكد من استيراد Optional
 
