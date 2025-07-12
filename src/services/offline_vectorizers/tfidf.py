@@ -14,7 +14,7 @@ def tfidf_train(docs, dataset_name):
         stop_words=None   # Handled by preprocessor
     )
 
-    # Train the vectorizer (fit) on the already processed document strings.
+    # Train the vectorizer (fit) on the documents
     tfidf_matrix = vectorizer.fit_transform(corpus)
 
     output_dir = f"data/{dataset_name}"
