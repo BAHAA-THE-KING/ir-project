@@ -1,4 +1,3 @@
-import time
 import dill
 import joblib
 import numpy as np
@@ -52,6 +51,8 @@ class TFIDF_online(Retriever):
             tokenized_query = TextPreprocessor.getInstance().preprocess_text(query)
             candidate_indices = inverted_index.get_documents_sharing_terms_with_query(tokenized_query)   
             docs_tfidf_matrix = docs_tfidf_matrix[candidate_indices]
+            if docs_tfidf_matrix.shape[0] == 0 or query_vec.nnz == 0:
+                return []
 
         cosine_sim = cosine_similarity(query_vec, docs_tfidf_matrix).flatten()
 
