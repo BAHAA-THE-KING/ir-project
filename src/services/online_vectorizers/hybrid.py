@@ -24,7 +24,7 @@ class Hybrid_online(Retriever):
             normalized_list.append((doc_id, normalized_score))
         return normalized_list
 
-    def search(self, dataset_name: str, query: str, top_k: int = 10, with_index: bool = True) -> list[tuple[str, float, str]]:
+    def search(self, dataset_name: str, query: str, top_k: int = 10) -> list[tuple[str, float, str]]:
         """
         Performs a complex hybrid search.
         """
@@ -39,17 +39,17 @@ class Hybrid_online(Retriever):
         #  STAGE 1: Parallel Fusion of TF-IDF and BM25
         # ==========================================================================
         
-        tfidf_results = tfidf_service.search(dataset_name, query, top_k)
+        tfidf_results = tfidf_service.search(dataset_name, query, top_k*2)
 
-        bm25_results = bm25_service.search(dataset_name, query, top_k)
+        bm25_results = bm25_service.search(dataset_name, query, top_k*2)
 
         # --- Normalize and Fuse the lexical results ---
         norm_tfidf = self.__normalize_scores__(tfidf_results)
         norm_bm25 = self.__normalize_scores__(bm25_results)
 
         fused_scores = {}
-        tfidf_weight = 0.5
-        bm25_weight = 0.5
+        tfidf_weight = 0.3
+        bm25_weight = 0.7
 
         for doc_id, score in norm_tfidf:
             fused_scores[str(doc_id)] = score * tfidf_weight
