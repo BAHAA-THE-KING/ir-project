@@ -1,12 +1,7 @@
 import sys
 import os
 
-project_root = os.path.dirname(os.path.abspath(__file__))
-src_path = os.path.join(project_root, 'src')
-if src_path not in sys.path:
-    sys.path.insert(0, src_path)
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Now import from src
 from fastapi import FastAPI, HTTPException
@@ -14,11 +9,12 @@ from pydantic import BaseModel
 from typing import List, Dict, Optional, Tuple
 import time
 import httpx
-from src.services.processing.text_preprocessor import TextPreprocessor
-from src.gui.ir_engine import IREngine, SearchModel
-from src.config import DATASETS
-from src.services.query_suggestion_service import QuerySuggestionService
-from src.database.db_connector import DBConnector
+from services.processing.text_preprocessor import TextPreprocessor
+from gui.ir_engine import IREngine, SearchModel
+from config import DATASETS
+# TODO: uncomment
+# from services.query_suggestion_service import QuerySuggestionService
+from database.db_connector import DBConnector
 from fastapi import Request
 import logging
 
@@ -54,7 +50,8 @@ db_connector.connect()
 suggestion_services = {}
 for dataset in DATASETS.keys():
     try:
-        suggestion_services[dataset] = QuerySuggestionService(dataset, preprocessor, db_connector)
+        # TODO: uncomment
+        # suggestion_services[dataset] = QuerySuggestionService(dataset, preprocessor, db_connector)
         print(f"Loaded QuerySuggestionService for dataset: {dataset}")
     except Exception as e:
         print(f"Failed to load QuerySuggestionService for dataset {dataset}: {e}")
