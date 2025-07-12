@@ -2,7 +2,7 @@ import math
 from services.processing.text_preprocessor import TextPreprocessor
 
 def calc_dcg(relevance, rank):
-    return ((2 ** relevance) - 1) / math.log10(rank + 1)
+    return ((2 ** relevance) - 1) / math.log2(rank + 1)
 
 class Retriever:
     def search(self, dataset_name: str, query: str, top_k: int = 10, with_index: bool = True) -> list[tuple[str, float, str]]:
@@ -52,6 +52,7 @@ class Retriever:
             
             res = sum(DCG) 
             ires = sum(iDCG) 
+            nDCG.append(res/ires)
             
             if print_more:
                 print("")
@@ -59,7 +60,6 @@ class Retriever:
                 print(f"DCG: {res}")
                 print(f"iDCG: {ires}")
                 print(f"nDCG: {res/ires*100}%")
-            nDCG.append(res/ires)
             if print_more:
                 print(f"Average nDCG: {sum(nDCG)/len(nDCG)*100}%")
         
@@ -87,6 +87,7 @@ class Retriever:
             for ii, res in enumerate(results):
                 if res[0] in cleaned_qrels[query.query_id].keys() and cleaned_qrels[query.query_id][res[0]] > 0:
                     firstRank = ii + 1
+                    break
             
             MRR.append(1/firstRank)
             
@@ -148,3 +149,75 @@ class Retriever:
         if print_more:
             print(f'MAP={MAP}%')
         return MAP
+
+    def evaluateAll(self, dataset_name, queries, qrels, K = 10):
+            MRR = []
+            MAP = []
+            nDCG = []
+
+            cleaned_qrels: dict[str, dict[str, int]] = {}
+            for qrel in qrels:
+                if qrel.query_id not in cleaned_qrels.keys():
+                    cleaned_qrels[qrel.query_id] = {}
+                cleaned_qrels[qrel.query_id][qrel.doc_id] = qrel.relevance
+
+            for i in range(len(queries)):
+                query = queries[i]
+                results = self.search(dataset_name, query.text, K * 10, True)
+               
+                # MRR calc
+                firstRank = 100
+                for j, res in enumerate(results):
+                    if res[0] in cleaned_qrels[query.query_id] and cleaned_qrels[query.query_id][res[0]] > 0:
+                        # MRR calc
+                        firstRank = j + 1
+                        break
+                
+                # MAP calc
+                relevant_num = 0
+                precision_sum = 0
+                # nDCG calc
+                DCG = []
+                iDCG = []
+                results = results[:K]
+                for jj, ress in enumerate(results):
+                    if ress[0] in cleaned_qrels[query.query_id] and cleaned_qrels[query.query_id][ress[0]] > 0:
+                        # MAP calc
+                        relevant_num += 1
+                        precision_sum += relevant_num / (jj + 1)
+                        # nDCG calc
+                        DCG.append(calc_dcg(cleaned_qrels[query.query_id][ress[0]], jj+1))
+                    else:
+                        # nDCG calc
+                        DCG.append(calc_dcg(0, jj+1))
+                
+                # MRR calc
+                MRR.append(1 / firstRank)
+                
+                # MAP calc
+                if relevant_num > 0:
+                    MAP.append(precision_sum / relevant_num)
+                
+                # nDCG calc
+                iDCG = [calc_dcg(qrel[1], iii+1) for iii, qrel in enumerate(sorted(list(cleaned_qrels[query.query_id].items()),key = lambda qrel:qrel[1], reverse=True)[:K])]
+                res = sum(DCG)
+                ires = sum(iDCG)
+                nDCG.append(res/ires)
+               
+            # MRR
+            MRR = sum(MRR) / len(MRR) * 100
+            
+            # MAP    
+            if len(MAP) > 0:
+                MAP = sum(MAP) / len(MAP) * 100
+            else:
+                MAP = 0
+            
+            #nDCG
+            nDCG = sum(nDCG) / len(nDCG) * 100
+            
+            return {
+                "MRR": MRR,
+                "MAP": MAP,
+                "nDCG": nDCG
+            }
