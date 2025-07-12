@@ -42,6 +42,7 @@ class QuerySuggestionService:
     def _get_index_file_path(self):
         return os.path.join(INDEX_SAVE_PATH_BASE, self.dataset_name.replace('/', '_'), "query_suggestion_chromadb_indexed.flag")
 
+    # Loads the ChromaDB n-gram index and supporting data from disk/database
     def _load_index(self):
         flag_path = self._get_index_file_path()
         if os.path.exists(flag_path):
@@ -60,6 +61,7 @@ class QuerySuggestionService:
                 return False
         return False
 
+    # Builds the n-gram suggestion index and stores it in ChromaDB
     def _build_index(self):
         print(f"Building query suggestion index with embeddings for {self.dataset_name} in ChromaDB...")
         
@@ -188,14 +190,15 @@ class QuerySuggestionService:
             f.write("indexed")
         print("Query suggestion index built and saved successfully in ChromaDB.")
 
-
+    # Loads or builds the n-gram suggestion index for the dataset
     def _load_or_build_index(self):
         if not self._load_index():
             self._build_index()
 
-    def _extract_snippet(self, full_text_from_db: str, phrase: str, window_size: int = 150) -> str: # **تعديل: زيادة window_size للمقتطف أكثر**
+    # Extracts a snippet around a phrase from the full text (used for suggestion context)
+    def _extract_snippet(self, full_text_from_db: str, phrase: str, window_size: int = 150) -> str:
         """
-        يستخرج مقتطفاً حول عبارة معينة في نص كامل (يُستخدم للمقتطف الفعلي الذي يظهر بجانب الاقتراح).
+        Extracts a snippet around a given phrase from the full text (used for the snippet shown next to the suggestion).
         """
         if not full_text_from_db or not phrase:
             return ""
@@ -221,11 +224,11 @@ class QuerySuggestionService:
         except ValueError:
             return full_text_from_db[:window_size * 2].replace('\n', ' ').strip() + "..." if len(full_text_from_db) > window_size * 2 else full_text_from_db.replace('\n', ' ').strip()
 
-
-    def _get_autocomplete_phrase_from_snippet(self, original_raw_text: str, matched_ngram_text: str, target_word_count: int = 8) -> str: # **تعديل: تقليل target_word_count هنا!**
+    # Attempts to extract a short, natural autocomplete phrase from the original text based on the matched n-gram
+    def _get_autocomplete_phrase_from_snippet(self, original_raw_text: str, matched_ngram_text: str, target_word_count: int = 8) -> str:
         """
-        يحاول استخراج عبارة إكمال تلقائي قصيرة وطبيعية (هدفها 5-8 كلمات) من النص الأصلي
-        بناءً على الـ N-gram المطابق، مع تحديد طولها بعدد الكلمات.
+        Attempts to extract a short, natural autocomplete phrase (target 5-8 words) from the original text
+        based on the matched n-gram, with the length determined by word count.
         """
         if not original_raw_text or not matched_ngram_text:
             return matched_ngram_text.replace('\n', ' ').strip() 
@@ -266,7 +269,11 @@ class QuerySuggestionService:
         return matched_ngram_text.replace('\n', ' ').strip() 
 
 
+    # Returns a list of (suggestion, snippet) tuples for the given query prefix
     def get_suggestions(self, query_prefix: str, top_k: int = 10) -> list[tuple[str, str]]:
+        """
+        Returns a list of (suggestion, snippet) tuples for the given query prefix.
+        """
         if not hasattr(self, 'suggestions_collection') or self.suggestions_collection is None:
             print("ChromaDB suggestions collection not initialized. Please rebuild index.")
             return []
@@ -281,7 +288,7 @@ class QuerySuggestionService:
 
         processed_prefix_after_spellcheck = " ".join(corrected_query_tokens)
 
-        processed_prefix_final_tokens = self.preprocessor.preprocess_text(processed_prefix_after_spellcheck, remove_stopwords_flag=True) 
+        processed_prefix_final_tokens = self.preprocessor.preprocess_text(processed_prefix_after_spellcheck, remove_stopwords_flag=False) 
         processed_prefix = " ".join(processed_prefix_final_tokens)
 
 
