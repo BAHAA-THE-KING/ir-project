@@ -33,8 +33,7 @@ class TFIDF_online(Retriever):
                 inverted_index.N = ii.N
                 TFIDF_online.__invertedIndex__[dataset_name] = inverted_index
 
-    def search(self, dataset_name, query, top_k, with_index = True):
-
+    def search(self, dataset_name, query, top_k):
         # Load the model and the index
         self.__loadInstance__(dataset_name)
         docs = self.__tfidfInstance__[dataset_name][0]
@@ -47,7 +46,7 @@ class TFIDF_online(Retriever):
         # Start the process
         query_vec = vectorizer.transform([query])
         
-        if(with_index):
+        if(TFIDF_online.with_index):
             tokenized_query = TextPreprocessor.getInstance().preprocess_text(query)
             candidate_indices = inverted_index.get_documents_sharing_terms_with_query(tokenized_query)   
             docs_tfidf_matrix = docs_tfidf_matrix[candidate_indices]
@@ -62,7 +61,7 @@ class TFIDF_online(Retriever):
         results = []
         # Limit results to a reasonable number for display/API response, e.g., top 10 or 20
         for i in ranked_indices[:top_k]:
-            if(with_index):
+            if(TFIDF_online.with_index):
                 original_doc_idx = candidate_indices[i]
             else:
                 original_doc_idx = i

@@ -5,7 +5,8 @@ def calc_dcg(relevance, rank):
     return ((2 ** relevance) - 1) / math.log2(rank + 1)
 
 class Retriever:
-    def search(self, dataset_name: str, query: str, top_k: int = 10, with_index: bool = True) -> list[tuple[str, float, str]]:
+    with_index: bool = True
+    def search(self, dataset_name: str, query: str, top_k: int = 10) -> list[tuple[str, float, str]]:
         raise NotImplementedError()
     
     def evaluateNDCG(self, dataset_name, queries, qrels, docs, K = 10, print_more = False):
@@ -19,7 +20,7 @@ class Retriever:
                 print(f"Query: {preprocess_text(query.text)}")
             
             # Search
-            results = self.search(dataset_name, query.text, K, True)
+            results = self.search(dataset_name, query.text, K)
             if print_more:
                 for i, res in enumerate(results):
                     print(f"Result #{i} {res[1]}: {res[2]}")
@@ -81,7 +82,7 @@ class Retriever:
 
         for i in range(len(queries)):
             query = queries[i]
-            results = self.search(dataset_name, query.text, K, True)
+            results = self.search(dataset_name, query.text, K)
             
             firstRank = 100
             for ii, res in enumerate(results):
@@ -117,7 +118,7 @@ class Retriever:
                 print(f'Query: {i+1}/{len(queries)}')
                 print(query.text)
 
-            results = self.search(dataset_name, query.text, K, True)
+            results = self.search(dataset_name, query.text, K)
             if print_more:
                 print([res[0] for res in results])
                 print([qrel.doc_id+f": {qrel.relevance}" for qrel in qrels if qrel.query_id == query.query_id])
@@ -163,7 +164,7 @@ class Retriever:
 
             for i in range(len(queries)):
                 query = queries[i]
-                results = self.search(dataset_name, query.text, K, True)
+                results = self.search(dataset_name, query.text, K)
                
                 # MRR calc
                 firstRank = 10

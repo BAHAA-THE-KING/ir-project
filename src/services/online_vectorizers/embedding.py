@@ -40,8 +40,8 @@ class Embedding_online(Retriever):
             Embedding_online.__collection_instance__[dataset_name] = load_dataset(dataset_name)
         return Embedding_online.__collection_instance__[dataset_name]
 
-    def search(self, dataset_name: str, query: str, top_k: int = 10, with_index: bool = True):
-        if with_index:
+    def search(self, dataset_name: str, query: str, top_k: int = 10):
+        if Embedding_online.with_index:
             return self.embedding_vectors_search(dataset_name, query, top_k)
         else:
             return self.embedding_search(dataset_name, query, top_k)

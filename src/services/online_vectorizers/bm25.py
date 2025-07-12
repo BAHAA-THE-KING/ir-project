@@ -34,24 +34,24 @@ class BM25_online(Retriever):
             BM25_online.__docs__[dataset_name] = load_dataset(dataset_name)
         return BM25_online.__docs__[dataset_name]
 
-    def search(self, dataset_name: str, query: str, top_k: int = 10, with_inverted_index: bool = True) -> list[tuple[str, float, str]]:
+    def search(self, dataset_name: str, query: str, top_k: int = 10) -> list[tuple[str, float, str]]:
         # Load the model and the documents
         bm25 = BM25_online.__loadInstance__(dataset_name)
         docs = BM25_online.__loadDocs__(dataset_name)
-        if with_inverted_index:
+        if BM25_online.with_index:
             inverted_index = BM25_online.__loadInvertedIndex__(dataset_name)
 
         # Execute the query
         query_tokens = TextPreprocessor.getInstance().preprocess_text(query)
 
-        if with_inverted_index:
+        if BM25_online.with_index:
             documents_sharing_terms_with_query = inverted_index.get_documents_sharing_terms_with_query(query_tokens)
             scores = bm25.get_batch_scores(query_tokens, documents_sharing_terms_with_query)
         else:
             scores = bm25.get_scores(query_tokens)
 
         # Sort the results
-        if with_inverted_index:
+        if BM25_online.with_index:
             top_indices = sorted(list(enumerate(documents_sharing_terms_with_query)), key=lambda  elm: scores[elm[0]], reverse=True)[:top_k]
         else:
             top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
@@ -59,7 +59,7 @@ class BM25_online(Retriever):
         results = []
 
         # Display the results
-        if with_inverted_index:
+        if BM25_online.with_index:
             for elm in top_indices:
                 text = docs[elm[1]].text
                 results.append((docs[elm[1]].doc_id, scores[elm[0]], text))
