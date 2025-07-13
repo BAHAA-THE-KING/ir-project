@@ -10,8 +10,8 @@ from enum import Enum
 class SearchModel(Enum):
     TFIDF = "TF-IDF"
     BM25 = "BM25"
-    HYBRID = "Hybrid"
-    EMBEDDING = "Embedding"
+    HYBRID = "HYBRID"
+    EMBEDDING = "EMBEDDING"
 
 class ir_engine:
     def __init__(self):
@@ -50,7 +50,7 @@ class ir_engine:
         Search the current dataset using the specified model and options.
         Returns a list of (doc_id, score, snippet) tuples.
         Args:
-            model_name: The search model to use (e.g., "TF-IDF", "BM25", "Hybrid", "Embedding").
+            model_name: The search model to use (e.g., "TF-IDF", "BM25", "HYBRID", "EMBEDDING").
             query: The search query string.
             top_k: Number of top results to return.
             use_inverted_index: For TF-IDF/BM25, whether to use an inverted index.
