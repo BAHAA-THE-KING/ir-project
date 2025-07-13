@@ -5,10 +5,10 @@ export const API_CONFIG = {
   
   // API endpoints
   ENDPOINTS: {
-    SEARCH: '/api/search',
-    DOCUMENTS: '/api/documents',
-    HEALTH: '/api/health',
-    DATASETS: '/api/datasets',
+    SEARCH: '/search',
+    DOCUMENTS: '/documents',
+    HEALTH: '/health',
+    DATASETS: '/datasets',
   },
   
   // Request timeout in milliseconds

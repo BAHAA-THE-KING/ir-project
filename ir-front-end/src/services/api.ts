@@ -3,21 +3,18 @@ import { API_CONFIG, buildApiUrl } from '../config/api';
 
 export interface SearchRequest {
   query: string;
-  algorithm: 'tf-idf' | 'embedding' | 'bm25' | 'hybrid';
-  dataset: 'antique' | 'beir/quora';
-  resultCount: number;
-  useIndexing: boolean;
-  useVectorStore: boolean;
+  model: 'TF-IDF' | 'EMBEDDING' | 'BM25' | 'HYBRID';
+  dataset_name: 'antique' | 'quora';
+  top_k: number;
+  use_inverted_index: boolean;
+  use_vector_store: boolean;
 }
 
 export interface SearchResponse {
   results: Array<{
     id: string;
-    title: string;
-    snippet: string;
     score: number;
-    url: string;
-    cluster?: string;
+    snippet: string;
   }>;
   totalResults: number;
   searchTime: number;

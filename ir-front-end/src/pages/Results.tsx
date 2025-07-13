@@ -19,15 +19,15 @@ const Results: React.FC = () => {
   }
 
   const algorithmLabels = {
-    'tf-idf': 'TF-IDF',
-    'embedding': 'Embedding',
-    'bm25': 'BM25',
-    'hybrid': 'Hybrid',
+    'TF-IDF': 'TF-IDF',
+    'EMBEDDING': 'Embedding',
+    'BM25': 'BM25',
+    'HYBRID': 'Hybrid',
   };
 
   const datasetLabels = {
     'antique': 'Antique',
-    'beir/quora': 'BEIR/Quora',
+    'quora': 'BEIR/Quora',
   };
 
   const renderResults = () => {
@@ -137,13 +137,13 @@ const Results: React.FC = () => {
               <HardDrive className="w-4 h-4 text-slate-400 dark:text-slate-500" />
               <span className="text-slate-600 dark:text-slate-400">Dataset:</span>
               <span className="font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/50 px-2 py-1 rounded-md">
-                {datasetLabels[searchState.dataset]}
+                {datasetLabels[searchState.dataset_name]}
               </span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-slate-600 dark:text-slate-400">Algorithm:</span>
               <span className="font-semibold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded-md">
-                {algorithmLabels[searchState.algorithm]}
+                {algorithmLabels[searchState.model]}
               </span>
             </div>
             <div className="flex items-center space-x-2">
