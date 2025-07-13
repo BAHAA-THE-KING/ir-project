@@ -41,8 +41,8 @@ class Embedding_online(Retriever):
     @staticmethod
     def __loadDocs__(dataset_name: str):
         if dataset_name not in Embedding_online.__docs__:
-            Embedding_online.__collection_instance__[dataset_name] = load_dataset(dataset_name)
-        return Embedding_online.__collection_instance__[dataset_name]
+            Embedding_online.__docs__[dataset_name] = load_dataset(dataset_name)
+        return Embedding_online.__docs__[dataset_name]
 
     def search(self, dataset_name: str, query: str, top_k: int = 10,with_index: bool = False):
         if Embedding_online.with_index:
