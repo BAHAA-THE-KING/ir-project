@@ -5,6 +5,11 @@ from services.online_vectorizers.embedding import Embedding_online
 from src.loader import load_dataset
 
 class Hybrid_online(Retriever):
+    def __init__(self, db_connector, docs):
+        self.db = db_connector
+        self.docs = docs
+    def __loadDocs__(self, dataset_name):
+        return self.docs[dataset_name]
     def __normalize_scores__(self, ranked_list: list) -> list:
         """
         Normalizes scores in a ranked list to a [0, 1] scale.
@@ -32,9 +37,9 @@ class Hybrid_online(Retriever):
         print("\nPerforming complex hybrid search (Stage 1: Fusion)...")
 
         # --- Get the required service modules from the registry ---
-        tfidf_service = TFIDF_online()
-        bm25_service = BM25_online()
-        embedding_service = Embedding_online()
+        tfidf_service = TFIDF_online(self.db, self.docs)
+        bm25_service = BM25_online(self.db, self.docs)
+        embedding_service = Embedding_online(self.db, self.docs)
 
         # ==========================================================================
         #  STAGE 1: Parallel Fusion of TF-IDF and BM25
@@ -76,13 +81,16 @@ class Hybrid_online(Retriever):
         reranked_results = embedding_service.embedding_rerank(dataset_name, query, candidate_doc_ids)
         
         # Convert reranked results to the expected format with text snippets
-        docs_list = load_dataset(dataset_name)
+        docs_list = self.docs[dataset_name]
         doc_id_to_doc = {doc.doc_id: doc for doc in docs_list}
         
         final_list = []
-        for doc_id, score in reranked_results[:top_k]:
+        for doc_id, score, _ in reranked_results[:top_k]:
             doc_obj = doc_id_to_doc.get(doc_id)
-            doc_text = doc_obj.text[:100] + "..." if doc_obj else ""
+            if doc_obj:
+                doc_id = doc_obj.doc_id
+                doc_text = doc_obj.text[:100] + "..."
+            else:
+                doc_text = ""
             final_list.append((doc_id, score, doc_text))
-        
         return final_list

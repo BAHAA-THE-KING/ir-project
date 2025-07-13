@@ -14,28 +14,25 @@ class SearchModel(Enum):
     EMBEDDING = "EMBEDDING"
 
 class ir_engine:
-    def __init__(self):
+    def __init__(self, db_connector, loaded_docs):
+        self.db_connector = db_connector
+        self.loaded_docs = loaded_docs
         text = TextPreprocessor().getInstance()
         text.preprocess_text("init")
-        
-        # Initialize docs dictionary for document lookup
         self.docs = {}
-        
-        tfidf = TFIDF_online()
+        tfidf = TFIDF_online(db_connector=db_connector, docs=loaded_docs)
         tfidf.__loadInstance__('antique')
         tfidf.__loadInstance__('quora')
         tfidf.__loadInvertedIndex__('antique')
         tfidf.__loadInvertedIndex__('quora')
-        
-        bm25 = BM25_online()
+        bm25 = BM25_online(db_connector=db_connector, docs=loaded_docs)
         bm25.__loadDocs__('antique')
         bm25.__loadDocs__('quora')
         bm25.__loadInstance__('antique')
         bm25.__loadInstance__('quora')
         bm25.__loadInvertedIndex__('antique')
         bm25.__loadInvertedIndex__('quora')
-
-        embedding = Embedding_online()
+        embedding = Embedding_online(db_connector=db_connector, docs=loaded_docs)
         embedding.__loadInstance__('antique')
         embedding.__loadInstance__('quora')
         embedding.__loadModelInstance__()
@@ -43,20 +40,10 @@ class ir_engine:
         embedding.__get_collection__('quora')
         embedding.__loadDocs__('antique')
         embedding.__loadDocs__('quora')
+        hybrid = Hybrid_online(db_connector=db_connector, docs=loaded_docs)
 
     def search(self, model_name: str, dataset_name: str, query: str, top_k: int = 10,
-            use_inverted_index: bool = False, use_vector_store: bool = False) -> List[Tuple[str, float, str]]:
-        """
-        Search the current dataset using the specified model and options.
-        Returns a list of (doc_id, score, snippet) tuples.
-        Args:
-            model_name: The search model to use (e.g., "TF-IDF", "BM25", "HYBRID", "EMBEDDING").
-            query: The search query string.
-            top_k: Number of top results to return.
-            use_inverted_index: For TF-IDF/BM25, whether to use an inverted index.
-            use_vector_store: For Embedding, whether to use a vector store.
-            include_cluster_info: For future use (currently ignored).
-        """
+            use_inverted_index: bool = False, use_vector_store: bool = False) -> list:
         print(f"Searching for query: '{query}' using model: {model_name} in dataset {dataset_name} (inverted_index={use_inverted_index}, vector_store={use_vector_store})")
         if use_inverted_index:
             TFIDF_online.with_index = True
@@ -64,20 +51,18 @@ class ir_engine:
         else:
             TFIDF_online.with_index = False
             BM25_online.with_index = False
-        
         if use_vector_store:
             Embedding_online.with_index = True
         else:
             Embedding_online.with_index = False
-        
         if model_name == SearchModel.HYBRID.value:
-            return Hybrid_online().search(dataset_name, query, top_k)
+            return Hybrid_online(db_connector=self.db_connector, docs=self.loaded_docs).search(dataset_name, query, top_k)
         elif model_name == SearchModel.BM25.value:
-            return BM25_online().search(dataset_name, query, top_k)
+            return BM25_online(db_connector=self.db_connector, docs=self.loaded_docs).search(dataset_name, query, top_k)
         elif model_name == SearchModel.TFIDF.value:
-            return TFIDF_online().search(dataset_name, query, top_k)
+            return TFIDF_online(db_connector=self.db_connector, docs=self.loaded_docs).search(dataset_name, query, top_k)
         elif model_name == SearchModel.EMBEDDING.value:
-            return Embedding_online().search(dataset_name, query, top_k)
+            return Embedding_online(db_connector=self.db_connector, docs=self.loaded_docs).search(dataset_name, query, top_k)
         else:
             raise ValueError(f"Model {model_name} not supported for search.")
     

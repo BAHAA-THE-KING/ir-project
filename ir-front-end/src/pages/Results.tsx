@@ -71,6 +71,7 @@ const Results: React.FC = () => {
         <div className="flex items-center space-x-2">
           <Link
             to={`/document/${result.doc_id}`}
+            state={{ dataset_name: searchState.dataset_name }}
             className="inline-flex items-center space-x-1 px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-400 transition-colors duration-200 text-sm font-medium"
           >
             <ExternalLink className="w-3 h-3" />

@@ -2,15 +2,21 @@ import math
 import dill
 from rank_bm25 import BM25Okapi
 from src.loader import load_dataset, Doc
-from services.online_vectorizers.inverted_index import InvertedIndex
+from src.services.online_vectorizers.inverted_index import InvertedIndex
 from src.services.processing.text_preprocessor import TextPreprocessor
-from services.online_vectorizers.Retriever import Retriever
-
+from src.services.online_vectorizers.Retriever import Retriever
+from src.database.db_connector import DBConnector
+import os
 
 class BM25_online(Retriever):
     __bm25instance__ : dict[str, BM25Okapi] = {}
     __invertedIndex__ : dict[str, InvertedIndex] = {}
     __docs__ : dict[str, list[Doc]] = {}
+
+    def __init__(self, db_connector, docs):
+        self.db = db_connector
+        self.docs = docs  # dict: {dataset_name: [(doc_id, text), ...]}
+
     @staticmethod
     def __loadInstance__(dataset_name : str):
         if dataset_name not in BM25_online.__bm25instance__.keys():
@@ -32,18 +38,15 @@ class BM25_online(Retriever):
                 inverted_index.N = ii.N
                 BM25_online.__invertedIndex__[dataset_name] = inverted_index
         return BM25_online.__invertedIndex__[dataset_name]
-    @staticmethod
-    def __loadDocs__(dataset_name : str):
-        if dataset_name not in BM25_online.__docs__.keys():
-            BM25_online.__docs__[dataset_name] = load_dataset(dataset_name)
-        return BM25_online.__docs__[dataset_name]
+    def __loadDocs__(self, dataset_name):
+        return self.docs[dataset_name]
 
     def search(self, dataset_name: str, query: str, top_k: int = 10) -> list[tuple[str, float, str]]:
         # Load the model and the documents
         bm25 = BM25_online.__loadInstance__(dataset_name)
         if bm25 is None:
             raise ValueError(f"BM25 model file not found for dataset '{dataset_name}'. Please train or provide the model file.")
-        docs = BM25_online.__loadDocs__(dataset_name)
+        docs = self.__loadDocs__(dataset_name)
         if BM25_online.with_index:
             inverted_index = BM25_online.__loadInvertedIndex__(dataset_name)
 
@@ -67,28 +70,16 @@ class BM25_online(Retriever):
 
         if BM25_online.with_index:
             for elm in top_indices:
-                text = docs[elm[1]].text
-                results.append((docs[elm[1]].doc_id, scores[elm[0]], text))
+                idx_val = elm[1] if isinstance(elm, tuple) else elm
+                doc_id = self.db.get_doc_id_by_id(dataset_name, idx_val + 1, cleaned=False)
+                text = docs[idx_val].text
+                score = scores[elm[0]] if isinstance(elm, tuple) else scores[elm]
+                results.append((doc_id, score, text))
         else:
             for idx in top_indices:
-                text = docs[idx].text
-                results.append((docs[idx].doc_id, scores[idx], text))
-                
-                
-        # # Display the results
-        # if BM25_online.with_index:
-        #     # Create a mapping from doc_id to doc for fast lookup
-        #     doc_id_to_doc = {doc.doc_id: doc for doc in docs}
-        #     for score_idx, doc_id_idx in top_indices:
-        #         doc_id = documents_sharing_terms_with_query[doc_id_idx]
-        #         doc = doc_id_to_doc.get(doc_id)
-        #         if doc is not None:
-        #             text = doc.text
-        #             results.append((doc.doc_id, scores[score_idx], text))
-        # else:
-        #     for idx in top_indices:
-        #         doc = docs[idx]
-        #         text = doc.text
-        #         results.append((doc.doc_id, scores[idx], text))
+                idx_val = idx[1] if isinstance(idx, tuple) else idx
+                doc_id = self.db.get_doc_id_by_id(dataset_name, idx_val + 1, cleaned=False)
+                text = docs[idx_val].text
+                results.append((doc_id, scores[idx_val], text))
         
         return results

@@ -31,13 +31,12 @@ class DBConnector:
             if not self.conn: 
                 print("Database connection not established.")
                 return []
-        
         try:
             cursor = self.conn.cursor()
             cursor.execute(query, params)
             return cursor.fetchall()
         except sqlite3.Error as e:
-            print(f"Error executing query: {query} - {e}")
+            print(f"Error executing query: {query} with params {params} - {e}")
             return []
 
     def get_document_text_by_id(self, doc_id: str, dataset_name: str, cleaned: bool = False) -> Optional[str]:
@@ -83,3 +82,22 @@ class DBConnector:
         
         print(f"Fetching {fetch_limit} documents (sample_ratio={sample_ratio}, limit={limit}) from {table_name}...")
         return self._execute_query(query)
+
+
+
+    def get_doc_id_by_id(self, dataset_name: str, id_value: int, cleaned: bool = False) -> Optional[str]:
+        """
+        Retrieve the doc_id for the row with the given id (primary key) from the specified table.
+        :param dataset_name: Dataset name (e.g., 'antique', 'quora').
+        :param id_value: The id (primary key) of the row (starts from 1).
+        :param cleaned: If True, use cleaned table; otherwise, use raw table.
+        :return: doc_id or None if not found.
+        """
+        table_name = f"{dataset_name}_cleaned" if cleaned else f"{dataset_name}_raw"
+        query = f"SELECT doc_id FROM {table_name} WHERE id = ?"
+        results = self._execute_query(query, (id_value,))
+        if results:
+            print(f"[DEBUG] get_doc_id_by_id: table={table_name}, id={id_value}, doc_id={results[0][0]}")
+            return results[0][0]
+        print(f"[DEBUG] get_doc_id_by_id: table={table_name}, id={id_value}, doc_id=None (no result)")
+        return None

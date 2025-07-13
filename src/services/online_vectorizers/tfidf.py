@@ -10,6 +10,9 @@ from services.online_vectorizers.Retriever import Retriever
 from services.online_vectorizers.inverted_index import InvertedIndex
 
 class TFIDF_online(Retriever):
+    def __init__(self, db_connector, docs):
+        self.db = db_connector
+        self.docs = docs
     __tfidfInstance__ : dict[str, list] = {}
     __invertedIndex__ : dict[str, InvertedIndex] = {}
 
@@ -67,11 +70,9 @@ class TFIDF_online(Retriever):
                 original_doc_idx = candidate_indices[i]
             else:
                 original_doc_idx = i
-
-            doc = docs[original_doc_idx]
-            results.append((
-                docs[original_doc_idx].doc_id,
-                float(cosine_sim[i]),
-                doc.text[:40] + "..." if len(doc.text) > 40 else doc.text # Provide a snippet
-            ))
+            doc = self.docs[dataset_name][original_doc_idx]
+            doc_id = doc.doc_id
+            text = doc.text
+            snippet = text[:40] + "..." if text and len(text) > 40 else text
+            results.append((doc_id, float(cosine_sim[i]), snippet))
         return results

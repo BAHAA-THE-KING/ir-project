@@ -1,27 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, FileText, Calendar, User, ExternalLink } from 'lucide-react';
-import { getDocumentById } from '../context/SearchContext';
 
 const Document: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [document, setDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Get dataset_name from location state
+  const datasetName = location.state?.dataset_name;
+
   useEffect(() => {
-    if (id) {
-      const doc = getDocumentById(id);
-      if (doc) {
-        setDocument(doc);
-      } else {
-        navigate('/');
-      }
+    if (id && datasetName) {
+      setLoading(true);
+      fetch(`http://127.0.0.1:8000/document/${id}?dataset_name=${encodeURIComponent(datasetName)}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Document not found');
+          return res.text();
+        })
+        .then(text => {
+          setDocument({
+            id,
+            fullText: text,
+            // Add more fields if needed
+          });
+        })
+        .catch(() => {
+          setDocument(null);
+        })
+        .finally(() => setLoading(false));
     } else {
       navigate('/');
     }
-    setLoading(false);
-  }, [id, navigate]);
+  }, [id, datasetName, navigate]);
 
   if (loading) {
     return (
@@ -103,34 +116,13 @@ const Document: React.FC = () => {
                 <FileText className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{document.title}</h1>
-                <div className="flex items-center space-x-4 text-sm text-slate-600 dark:text-slate-400 mt-1">
-                  <div className="flex items-center space-x-1">
-                    <span>Document ID:</span>
-                    <span className="font-medium">{document.id}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <span>Score:</span>
-                    <span className="font-medium">{document.score.toFixed(2)}</span>
-                  </div>
-                </div>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Document {document.id}</h1>
               </div>
             </div>
             <div className="flex items-center space-x-2">
               <button className="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors duration-200">
                 <ExternalLink className="w-5 h-5" />
               </button>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-6 text-sm text-slate-500 dark:text-slate-400">
-            <div className="flex items-center space-x-1">
-              <Calendar className="w-4 h-4" />
-              <span>Last updated: Today</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <User className="w-4 h-4" />
-              <span>Author: System</span>
             </div>
           </div>
         </div>

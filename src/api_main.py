@@ -56,22 +56,12 @@ suggestion_services = {}
 def initialize_services():
     """Initialize all services once at startup"""
     global ir_engine_instance, preprocessor_instance, db_connector_instance, suggestion_services
-    
     logging.info("Initializing IR services...")
-    
-    # Initialize IR Engine
-    try:
-        ir_engine_instance = ir_engine()
-        logging.info("IR Engine initialized")
-    except Exception as e:
-        logging.error(f"Failed to initialize IR Engine: {e}")
-        logging.warning("IR Engine initialization failed - search features may be limited")
-        ir_engine_instance = None
-    
+
     # Initialize singleton instances
     preprocessor_instance = TextPreprocessor.getInstance()
     logging.info("TextPreprocessor initialized")
-    
+
     # Initialize database connector
     try:
         db_path = "data/ir_project_data.db"  # Database is in the data directory
@@ -82,7 +72,26 @@ def initialize_services():
         logging.error(f"Failed to initialize database connector: {e}")
         logging.warning("Database connector initialization failed - some features may be limited")
         db_connector_instance = None
-    
+
+    # Load all docs for each dataset ONCE
+    class DocObj:
+        def __init__(self, doc_id, text):
+            self.doc_id = doc_id
+            self.text = text
+    loaded_docs = {}
+    if db_connector_instance is not None:
+        for dataset in DATASETS.keys():
+            loaded_docs[dataset] = [DocObj(doc_id, text) for doc_id, text in db_connector_instance.get_all_document_ids_and_texts(dataset, cleaned=False)]
+
+    # Initialize IR Engine
+    try:
+        ir_engine_instance = ir_engine(db_connector_instance, loaded_docs)
+        logging.info("IR Engine initialized")
+    except Exception as e:
+        logging.error(f"Failed to initialize IR Engine: {e}")
+        logging.warning("IR Engine initialization failed - search features may be limited")
+        ir_engine_instance = None
+
     # Preload QuerySuggestionService for all datasets
     logging.info("Loading QuerySuggestionService instances...")
     for dataset in DATASETS.keys():
@@ -98,7 +107,7 @@ def initialize_services():
             logging.error(f"Failed to load QuerySuggestionService for dataset '{dataset}': {e}")
             logging.warning(f"Skipping QuerySuggestionService for dataset '{dataset}' - suggestion features will be disabled")
             # Don't add to suggestion_services if it fails, but continue with other services
-    
+
     logging.info(f"Successfully loaded {len(suggestion_services)} QuerySuggestionService instances")
 
 def get_suggestion_service(dataset: str) -> QuerySuggestionService:
