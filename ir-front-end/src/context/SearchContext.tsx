@@ -1,16 +1,18 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { searchDocuments, SearchRequest, SearchResponse } from '../services/api';
+import React, { createContext, useContext, useState, ReactNode } from "react";
+import {
+  searchDocuments,
+  SearchRequest,
+  SearchResponse,
+} from "../services/api";
 
-export type SearchAlgorithm = 'TF-IDF' | 'EMBEDDING' | 'BM25' | 'HYBRID';
-export type Dataset = 'antique' | 'beir/quora';
+export type SearchAlgorithm = "TF-IDF" | "EMBEDDING" | "BM25" | "HYBRID";
+export type Dataset = "antique" | "quora";
 
 export interface SearchResult {
   id: string;
-  title: string;
   snippet: string;
   score: number;
   url: string;
-  cluster?: string;
 }
 
 export interface SearchState {
@@ -28,7 +30,14 @@ export interface SearchState {
 interface SearchContextType {
   searchState: SearchState;
   setSearchState: (state: Partial<SearchState>) => void;
-  performSearch: (query: string, model: SearchAlgorithm, dataset_name: Dataset, resultCount: number, useIndexing: boolean, useVectorStore: boolean) => void;
+  performSearch: (
+    query: string,
+    model: SearchAlgorithm,
+    dataset_name: Dataset,
+    resultCount: number,
+    useIndexing: boolean,
+    useVectorStore: boolean
+  ) => Promise<void>;
 }
 
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
@@ -36,18 +45,19 @@ const SearchContext = createContext<SearchContextType | undefined>(undefined);
 export const useSearch = () => {
   const context = useContext(SearchContext);
   if (!context) {
-    throw new Error('useSearch must be used within a SearchProvider');
+    throw new Error("useSearch must be used within a SearchProvider");
   }
   return context;
 };
 
 const mockDocuments = [
   {
-    id: '1',
-    title: 'Introduction to Machine Learning',
-    snippet: 'Machine learning is a subset of artificial intelligence that enables computers to learn and improve from experience without being explicitly programmed.',
+    id: "1",
+    title: "Introduction to Machine Learning",
+    snippet:
+      "Machine learning is a subset of artificial intelligence that enables computers to learn and improve from experience without being explicitly programmed.",
     score: 0.95,
-    url: '/document/1',
+    url: "/document/1",
     fullText: `# Introduction to Machine Learning
 
 Machine learning is a subset of artificial intelligence (AI) that enables computers to learn and improve from experience without being explicitly programmed. It focuses on developing algorithms that can access data and use it to learn for themselves.
@@ -79,14 +89,15 @@ Machine learning has numerous real-world applications:
 - Medical diagnosis
 - Financial fraud detection
 
-The field continues to evolve rapidly, with new techniques and applications emerging regularly.`
+The field continues to evolve rapidly, with new techniques and applications emerging regularly.`,
   },
   {
-    id: '2',
-    title: 'Deep Learning Fundamentals',
-    snippet: 'Deep learning is a subset of machine learning that uses neural networks with multiple layers to model and understand complex patterns in data.',
+    id: "2",
+    title: "Deep Learning Fundamentals",
+    snippet:
+      "Deep learning is a subset of machine learning that uses neural networks with multiple layers to model and understand complex patterns in data.",
     score: 0.92,
-    url: '/document/2',
+    url: "/document/2",
     fullText: `# Deep Learning Fundamentals
 
 Deep learning is a subset of machine learning that uses neural networks with multiple layers (hence "deep") to model and understand complex patterns in data. It's inspired by the structure and function of the human brain.
@@ -134,14 +145,15 @@ Deep learning models require:
 - Careful hyperparameter tuning
 - Regularization techniques
 
-The field has seen remarkable advances in recent years, enabling breakthrough applications in various domains.`
+The field has seen remarkable advances in recent years, enabling breakthrough applications in various domains.`,
   },
   {
-    id: '3',
-    title: 'Natural Language Processing Techniques',
-    snippet: 'Natural Language Processing (NLP) is a branch of AI that helps computers understand, interpret, and manipulate human language.',
+    id: "3",
+    title: "Natural Language Processing Techniques",
+    snippet:
+      "Natural Language Processing (NLP) is a branch of AI that helps computers understand, interpret, and manipulate human language.",
     score: 0.88,
-    url: '/document/3',
+    url: "/document/3",
     fullText: `# Natural Language Processing Techniques
 
 Natural Language Processing (NLP) is a branch of artificial intelligence that helps computers understand, interpret, and manipulate human language. It bridges the gap between human communication and computer understanding.
@@ -196,14 +208,15 @@ NLP powers many modern applications:
 - Document classification
 - Information extraction
 
-The field continues to advance rapidly, with new models and techniques emerging regularly.`
+The field continues to advance rapidly, with new models and techniques emerging regularly.`,
   },
   {
-    id: '4',
-    title: 'Computer Vision Applications',
-    snippet: 'Computer vision is a field of AI that trains computers to interpret and understand the visual world through digital images and videos.',
+    id: "4",
+    title: "Computer Vision Applications",
+    snippet:
+      "Computer vision is a field of AI that trains computers to interpret and understand the visual world through digital images and videos.",
     score: 0.86,
-    url: '/document/4',
+    url: "/document/4",
     fullText: `# Computer Vision Applications
 
 Computer vision is a field of artificial intelligence that trains computers to interpret and understand the visual world. Using digital images from cameras and videos, machines can accurately identify and classify objects.
@@ -278,14 +291,15 @@ Leveraging pre-trained models:
 - Robotic guidance
 - Inventory management
 
-The field continues to evolve with new techniques and applications emerging across various industries.`
+The field continues to evolve with new techniques and applications emerging across various industries.`,
   },
   {
-    id: '5',
-    title: 'Reinforcement Learning Algorithms',
-    snippet: 'Reinforcement learning is a type of machine learning where an agent learns to make decisions by taking actions in an environment to maximize reward.',
+    id: "5",
+    title: "Reinforcement Learning Algorithms",
+    snippet:
+      "Reinforcement learning is a type of machine learning where an agent learns to make decisions by taking actions in an environment to maximize reward.",
     score: 0.84,
-    url: '/document/5',
+    url: "/document/5",
     fullText: `# Reinforcement Learning Algorithms
 
 Reinforcement learning (RL) is a type of machine learning where an agent learns to make decisions by taking actions in an environment to maximize cumulative reward. It's inspired by behavioral psychology and how humans and animals learn through trial and error.
@@ -372,15 +386,17 @@ Learning at multiple levels:
 - Personalized medicine
 - Resource allocation
 
-Reinforcement learning continues to show promise in solving complex sequential decision-making problems across various domains.`
-  }
+Reinforcement learning continues to show promise in solving complex sequential decision-making problems across various domains.`,
+  },
 ];
 
-export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const SearchProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [searchState, setSearchStateInternal] = useState<SearchState>({
-    query: '',
-    model: 'TF-IDF',
-    dataset_name: 'antique',
+    query: "",
+    model: "TF-IDF",
+    dataset_name: "antique",
     resultCount: 10,
     useIndexing: true,
     useVectorStore: false,
@@ -390,24 +406,33 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   });
 
   const setSearchState = (newState: Partial<SearchState>) => {
-    setSearchStateInternal(prev => ({ ...prev, ...newState }));
+    setSearchStateInternal((prev) => ({ ...prev, ...newState }));
   };
 
-  const performSearch = async (query: string, model: SearchAlgorithm, dataset_name: Dataset, resultCount: number, useIndexing: boolean, useVectorStore: boolean) => {
+  const performSearch = async (
+    query: string,
+    model: SearchAlgorithm,
+    dataset_name: Dataset,
+    resultCount: number,
+    useIndexing: boolean,
+    useVectorStore: boolean
+  ) => {
     const startTime = Date.now();
-    
+
     try {
       const searchRequest: SearchRequest = {
         query,
         model,
         dataset_name,
-        resultCount,
-        useIndexing,
-        useVectorStore
+        top_k: resultCount,
+        use_inverted_index: useIndexing,
+        use_vector_store: useVectorStore,
       };
 
-      const searchResponse: SearchResponse = await searchDocuments(searchRequest);
-      
+      const searchResponse: SearchResponse = await searchDocuments(
+        searchRequest
+      );
+
       setSearchState({
         query,
         model,
@@ -415,21 +440,25 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         resultCount,
         useIndexing,
         useVectorStore,
-        results: searchResponse.results,
+        results: searchResponse.results.map((res) => ({
+          ...res,
+          url: "/document/" + res.id,
+        })),
         searchTime: Date.now() - startTime,
         totalResults: searchResponse.totalResults,
       });
     } catch (error) {
-      console.error('Search failed:', error);
+      console.error("Search failed:", error);
       // Fallback to mock data for development
       const filteredResults = mockDocuments
-        .filter(doc => 
-          doc.title.toLowerCase().includes(query.toLowerCase()) ||
-          doc.snippet.toLowerCase().includes(query.toLowerCase())
+        .filter(
+          (doc) =>
+            doc.title.toLowerCase().includes(query.toLowerCase()) ||
+            doc.snippet.toLowerCase().includes(query.toLowerCase())
         )
         .sort((a, b) => b.score - a.score)
         .slice(0, resultCount);
-      
+
       setSearchState({
         query,
         model,
@@ -445,12 +474,14 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   return (
-    <SearchContext.Provider value={{ searchState, setSearchState, performSearch }}>
+    <SearchContext.Provider
+      value={{ searchState, setSearchState, performSearch }}
+    >
       {children}
     </SearchContext.Provider>
   );
 };
 
 export const getDocumentById = (id: string) => {
-  return mockDocuments.find(doc => doc.id === id);
+  return mockDocuments.find((doc) => doc.id === id);
 };

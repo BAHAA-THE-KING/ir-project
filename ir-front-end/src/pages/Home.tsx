@@ -18,7 +18,7 @@ import { useSearch, SearchAlgorithm, Dataset } from "../context/SearchContext";
 
 const Home: React.FC = () => {
   const [query, setQuery] = useState("");
-  const [algorithm, setAlgorithm] = useState<SearchAlgorithm>("HYBRID");
+  const [algorithm, setAlgorithm] = useState<SearchAlgorithm>("TF-IDF");
   const [dataset, setDataset] = useState<Dataset>("antique");
   const [resultCount, setResultCount] = useState(10);
   const [useIndexing, setUseIndexing] = useState(true);
@@ -109,8 +109,8 @@ const Home: React.FC = () => {
         return option === "indexing";
       case "BM25":
         return option === "vectorStore";
-      case "HYBRID":
-        return false;
+        case "HYBRID":
+        return option === "vectorStore";
       default:
         return false;
     }
@@ -121,7 +121,7 @@ const Home: React.FC = () => {
     if (!query.trim()) return;
 
     setIsSearching(true);
-    performSearch(
+    await performSearch(
       query,
       algorithm,
       dataset,
@@ -177,7 +177,7 @@ const Home: React.FC = () => {
       icon: Database,
     },
     {
-      value: "beir/quora",
+      value: "quora",
       label: "BEIR/Quora",
       description: "Question-answering benchmark dataset",
       icon: HardDrive,

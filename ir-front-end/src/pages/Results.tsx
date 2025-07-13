@@ -19,15 +19,15 @@ const Results: React.FC = () => {
   }
 
   const algorithmLabels = {
-    'tf-idf': 'TF-IDF',
-    'embedding': 'Embedding',
-    'bm25': 'BM25',
-    'hybrid': 'Hybrid',
+    'TF-IDF': 'TF-IDF',
+    'EMBEDDING': 'Embedding',
+    'BM25': 'BM25',
+    'HYBRID': 'Hybrid',
   };
 
   const datasetLabels = {
     'antique': 'Antique',
-    'beir/quora': 'BEIR/Quora',
+    'quora': 'BEIR/Quora',
   };
 
   const renderResults = () => {
