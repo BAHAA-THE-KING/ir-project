@@ -18,6 +18,9 @@ class ir_engine:
         text = TextPreprocessor().getInstance()
         text.preprocess_text("init")
         
+        # Initialize docs dictionary for document lookup
+        self.docs = {}
+        
         tfidf = TFIDF_online()
         tfidf.__loadInstance__('antique')
         tfidf.__loadInstance__('quora')

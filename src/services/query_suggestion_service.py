@@ -23,10 +23,12 @@ INDEX_SAVE_PATH_BASE = "./data"
 N_GRAM_CHROMADB_PATH = "./data/chroma_db_suggestions" 
 
 class QuerySuggestionService:
+    # Class-level cache for embedding model to avoid reloading
+    _embedding_model_cache = None
+    
     def __init__(self, dataset_name, preprocessor: TextPreprocessor, db_connector: DBConnector):
         self.dataset_name = dataset_name
         self.preprocessor = preprocessor
-        self.embedding_model = Embedding_online.__loadModelInstance__() 
         self.db_connector = db_connector 
 
         self.all_docs_by_id = {}
@@ -37,7 +39,17 @@ class QuerySuggestionService:
         self.chroma_client = chromadb.PersistentClient(path=N_GRAM_CHROMADB_PATH)
         self.suggestions_collection_name = f"{dataset_name.replace('/', '_')}_ngrams"
         
+        # Use cached embedding model or load it once
+        if QuerySuggestionService._embedding_model_cache is None:
+            print(f"Loading embedding model for {dataset_name}...")
+            QuerySuggestionService._embedding_model_cache = Embedding_online.__loadModelInstance__()
+            print(f"Embedding model loaded and cached for reuse")
+        
+        self.embedding_model = QuerySuggestionService._embedding_model_cache
+        
+        print(f"Initializing QuerySuggestionService for dataset: {dataset_name}")
         self._load_or_build_index()
+        print(f"QuerySuggestionService initialization complete for dataset: {dataset_name}")
 
     def _get_index_file_path(self):
         return os.path.join(INDEX_SAVE_PATH_BASE, self.dataset_name.replace('/', '_'), "query_suggestion_chromadb_indexed.flag")
@@ -225,7 +237,7 @@ class QuerySuggestionService:
             return full_text_from_db[:window_size * 2].replace('\n', ' ').strip() + "..." if len(full_text_from_db) > window_size * 2 else full_text_from_db.replace('\n', ' ').strip()
 
     # Attempts to extract a short, natural autocomplete phrase from the original text based on the matched n-gram
-    def _get_autocomplete_phrase_from_snippet(self, original_raw_text: str, matched_ngram_text: str, target_word_count: int = 8) -> str:
+    def _get_autocomplete_phrase_from_snippet(self, original_raw_text: str, matched_ngram_text: str, target_word_count: int = 15) -> str:
         """
         Attempts to extract a short, natural autocomplete phrase (target 5-8 words) from the original text
         based on the matched n-gram, with the length determined by word count.
