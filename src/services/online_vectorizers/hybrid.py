@@ -2,6 +2,7 @@ from services.online_vectorizers.Retriever import Retriever
 from services.online_vectorizers.tfidf import TFIDF_online
 from services.online_vectorizers.bm25 import BM25_online
 from services.online_vectorizers.embedding import Embedding_online
+from src.loader import load_dataset
 
 class Hybrid_online(Retriever):
     def __normalize_scores__(self, ranked_list: list) -> list:
@@ -72,6 +73,16 @@ class Hybrid_online(Retriever):
         # ==========================================================================
 
         # Call the new, efficient rerank function from the embedding service
-        final_list = embedding_service.embedding_rerank(dataset_name, query, candidate_doc_ids)
+        reranked_results = embedding_service.embedding_rerank(dataset_name, query, candidate_doc_ids)
         
-        return final_list[:top_k]
+        # Convert reranked results to the expected format with text snippets
+        docs_list = load_dataset(dataset_name)
+        doc_id_to_doc = {doc.doc_id: doc for doc in docs_list}
+        
+        final_list = []
+        for doc_id, score in reranked_results[:top_k]:
+            doc_obj = doc_id_to_doc.get(doc_id)
+            doc_text = doc_obj.text[:100] + "..." if doc_obj else ""
+            final_list.append((doc_id, score, doc_text))
+        
+        return final_list
