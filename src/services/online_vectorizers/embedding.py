@@ -57,7 +57,7 @@ class Embedding_online(Retriever):
         document_embeddings = Embedding_online.__loadInstance__(dataset_name)
         print("DEBUG: bert_embeddings.npy loaded")
         print("DEBUG: About to load docs with load_dataset")
-        docs = load_dataset(dataset_name)
+        docs = Embedding_online.__loadDocs__(dataset_name)
         processedQuery = TextPreprocessor.getInstance().preprocess_text(query)
         query_embedding = model.encode(" ".join(processedQuery), convert_to_tensor=True)
 
@@ -94,28 +94,27 @@ class Embedding_online(Retriever):
         return results
 
     def embedding_rerank(self, dataset_name: str, query: str, doc_ids: list) -> list[tuple[str, float]]:
-        docs_list = load_dataset(dataset_name)
-        document_embeddings = Embedding_online.__loadInstance__(dataset_name)
+        """
+        Efficiently re-ranks a list of documents using the loaded embeddings.
+        """
+
+        docs_list =  Embedding_online.__loadDocs__(dataset_name)
+        document_embeddings =  Embedding_online.__loadInstance__(dataset_name)
         model = Embedding_online.__loadModelInstance__()
 
         # 1. Create a quick lookup map for doc_id to its index
-        # تصحيح: هذا الجزء لا ينشئ خريطة doc_id إلى الفهرس بشكل صحيح
-        # يجب أن تكون خريطة حقيقية {doc.doc_id: index for index, doc in enumerate(docs_list)}
-        # ولكن لغرض الـ rerank، سنقوم بتحويل doc_ids إلى النصوص أولاً
-        
-        # تحويل قائمة doc_ids إلى قائمة النصوص المقابلة لها
-        doc_texts_to_rerank = []
-        doc_id_to_original_doc_obj = {doc.doc_id: doc for doc in docs_list} # قاموس للبحث السريع
-        
-        for doc_id in doc_ids:
-            if doc_id in doc_id_to_original_doc_obj:
-                doc_texts_to_rerank.append(doc_id_to_original_doc_obj[doc_id].text)
-            
-        if not doc_texts_to_rerank:
-            return []
+        doc_id_to_index = enumerate(docs_list)
 
-        # 2. Encode the candidate documents
-        candidate_embeddings = model.encode(doc_texts_to_rerank, convert_to_tensor=True)
+        # 2. Get the indices and embeddings for the documents we need to rerank
+        candidate_indices = [i for i, doc in doc_id_to_index if doc.doc_id in doc_ids]
+
+        # Filter out any docs that might not be in our list
+        valid_indices = [idx for idx in candidate_indices if idx is not None]
+        
+        if not valid_indices:
+            return []
+            
+        candidate_embeddings = document_embeddings[valid_indices]
         
         # 3. Encode the query
         query_embedding = model.encode(query, convert_to_tensor=True)
@@ -123,9 +122,10 @@ class Embedding_online(Retriever):
         # 4. Calculate similarity scores
         cosine_scores = util.cos_sim(query_embedding, candidate_embeddings)[0]
         
-        # 5. Pair the original doc_ids with their new scores
+        # 5. Pair the original doc_ids (that were valid) with their new scores
+        valid_doc_ids = [docs_list[i] for i in valid_indices]
         reranked_results = []
-        for i, score in enumerate(cosine_scores):
-            reranked_results.append((doc_ids[i], score.item())) # استخدام doc_ids الأصلية بالترتيب
+        for doc, score in zip(valid_doc_ids, cosine_scores):
+            reranked_results.append((doc.doc_id, score.item(), doc.text))
 
         return sorted(reranked_results, key=lambda item: item[1], reverse=True)
