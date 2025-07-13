@@ -19,8 +19,8 @@ from src.database.db_connector import DBConnector
 
 
 
-INDEX_SAVE_PATH_BASE = "./data" 
-N_GRAM_CHROMADB_PATH = "./data/chroma_db_suggestions" 
+INDEX_SAVE_PATH_BASE = "data" 
+N_GRAM_CHROMADB_PATH = "data/chroma_db_suggestions" 
 
 class QuerySuggestionService:
     # Class-level cache for embedding model to avoid reloading

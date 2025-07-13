@@ -6,7 +6,6 @@ from src.services.online_vectorizers.inverted_index import InvertedIndex
 from src.services.processing.text_preprocessor import TextPreprocessor
 from src.services.online_vectorizers.Retriever import Retriever
 
-
 class BM25_online(Retriever):
     __bm25instance__ : dict[str, BM25Okapi] = {}
     __invertedIndex__ : dict[str, InvertedIndex] = {}
