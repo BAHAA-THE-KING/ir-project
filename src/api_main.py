@@ -155,7 +155,7 @@ async def perform_search(request: SearchRequest):
     """
     Performs a search using the specified model and the currently loaded dataset.
 
-    - **model**: The search model to use (e.g., "TF-IDF", "BM25", "Hybrid", "Embedding").
+    - **model**: The search model to use (e.g., "TF-IDF", "BM25", "HYBRID", "EMBEDDING").
     - **query**: The search query string.
     - **dataset_name**: The dataset to use for the search.
     - **top_k**: The number of top relevant documents to retrieve (default: 10).
