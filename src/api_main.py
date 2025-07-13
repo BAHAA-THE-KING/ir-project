@@ -42,28 +42,65 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["X-Process-Time"] = str(process_time)
     return response
 
-# Initialize the IR Engine globally to maintain state across requests
-ir_engine = ir_engine()
-
-# Singleton instances
-preprocessor = TextPreprocessor.getInstance()
-db_path = "data/ir_project_data.db"
-db_connector = DBConnector(db_path)
-db_connector.connect()
-
-# Preload QuerySuggestionService for all datasets
+# Global variables for singleton instances
+ir_engine_instance = None
+preprocessor_instance = None
+db_connector_instance = None
 suggestion_services = {}
-for dataset in ['antique', 'quora']:
-    try:
-        # TODO: uncomment
-        # suggestion_services[dataset] = QuerySuggestionService(dataset, preprocessor, db_connector)
-        print(f"Loaded QuerySuggestionService for dataset: {dataset}")
-    except Exception as e:
-        print(f"Failed to load QuerySuggestionService for dataset {dataset}: {e}")
 
-def get_suggestion_service(dataset):
+def initialize_services():
+    """Initialize all services once at startup"""
+    global ir_engine_instance, preprocessor_instance, db_connector_instance, suggestion_services
+    
+    logging.info("Initializing IR services...")
+    
+    # Initialize IR Engine
+    try:
+        ir_engine_instance = ir_engine()
+        logging.info("IR Engine initialized")
+    except Exception as e:
+        logging.error(f"Failed to initialize IR Engine: {e}")
+        logging.warning("IR Engine initialization failed - search features may be limited")
+        ir_engine_instance = None
+    
+    # Initialize singleton instances
+    preprocessor_instance = TextPreprocessor.getInstance()
+    logging.info("TextPreprocessor initialized")
+    
+    # Initialize database connector
+    try:
+        db_path = "data/ir_project_data.db"  # Database is in the data directory
+        db_connector_instance = DBConnector(db_path)
+        db_connector_instance.connect()
+        logging.info("Database connector initialized")
+    except Exception as e:
+        logging.error(f"Failed to initialize database connector: {e}")
+        logging.warning("Database connector initialization failed - some features may be limited")
+        db_connector_instance = None
+    
+    # Preload QuerySuggestionService for all datasets
+    logging.info("Loading QuerySuggestionService instances...")
+    for dataset in ['antique', 'quora']:
+        try:
+            if db_connector_instance is None:
+                logging.warning(f"Skipping QuerySuggestionService for dataset '{dataset}' - database connector not available")
+                continue
+            start_time = time.time()
+            # TODO: uncomment
+            # suggestion_services[dataset] = QuerySuggestionService(dataset, preprocessor_instance, db_connector_instance)
+            load_time = time.time() - start_time
+            logging.info(f"Loaded QuerySuggestionService for dataset '{dataset}' in {load_time:.2f} seconds")
+        except Exception as e:
+            logging.error(f"Failed to load QuerySuggestionService for dataset '{dataset}': {e}")
+            logging.warning(f"Skipping QuerySuggestionService for dataset '{dataset}' - suggestion features will be disabled")
+            # Don't add to suggestion_services if it fails, but continue with other services
+    
+    logging.info(f"Successfully loaded {len(suggestion_services)} QuerySuggestionService instances")
+
+def get_suggestion_service(dataset: str) -> QuerySuggestionService:
+    """Get a suggestion service for the specified dataset"""
     if dataset not in suggestion_services:
-        raise ValueError(f"Dataset '{dataset}' is not available or failed to load.")
+        raise ValueError(f"Dataset '{dataset}' is not available. Available datasets: {list(suggestion_services.keys())}")
     return suggestion_services[dataset]
 
 # Pydantic models for request and response validation
@@ -123,20 +160,28 @@ async def perform_search(request: SearchRequest):
     """
     start_time = time.time()
     try:
-        # Call the /preprocess endpoint to get the preprocessed query
-        preprocess_start = time.time()
-        async with httpx.AsyncClient() as client:
-            preprocess_response = await client.post(
-                "http://127.0.0.1:8000/preprocess",
-                json={"query": request.query}
-            )
-            preprocess_data = preprocess_response.json()
-            preprocessed_query = preprocess_data["preprocessed"]
-        preprocess_time = time.time() - preprocess_start
-        # Use the preprocessed query for searching (join tokens back to string if needed)
-        query_for_search = " ".join(preprocessed_query)
+        # Skip preprocessing for TF-IDF model, use original query
+        if request.model == "TF-IDF":
+            query_for_search = request.query
+            preprocess_time = 0.0
+        else:
+            # Call the /preprocess endpoint to get the preprocessed query
+            preprocess_start = time.time()
+            async with httpx.AsyncClient() as client:
+                preprocess_response = await client.post(
+                    "http://127.0.0.1:8000/preprocess",
+                    json={"query": request.query}
+                )
+                preprocess_data = preprocess_response.json()
+                preprocessed_query = preprocess_data["preprocessed"]
+            preprocess_time = time.time() - preprocess_start
+            # Use the preprocessed query for searching (join tokens back to string if needed)
+            query_for_search = " ".join(preprocessed_query)
+        
         search_start = time.time()
-        results = ir_engine.search(
+        if ir_engine_instance is None:
+            raise HTTPException(status_code=500, detail="IR Engine not initialized")
+        results = ir_engine_instance.search(
             model_name=request.model,
             dataset_name=request.dataset_name,
             query=query_for_search,
@@ -169,7 +214,9 @@ async def get_document_content(doc_id: str):
     Retrieves the full text content of a document given its document ID.
     """
     try:
-        document_text = ir_engine.get_document(doc_id)
+        if ir_engine_instance is None:
+            raise HTTPException(status_code=500, detail="IR Engine not initialized")
+        document_text = ir_engine_instance.get_document(doc_id)
         if document_text is None:
             raise HTTPException(status_code=404, detail=f"Document with ID '{doc_id}' not found.")
         return document_text
@@ -198,12 +245,64 @@ async def suggest_query(request: SuggestRequest):
         time_taken = time.time() - start_time
         logging.info(f"[TIMING] /suggest: time_taken={time_taken:.4f}s")
         return SuggestResponse(suggestions=[SuggestionItem(suggestion=s[0], snippet=s[1]) for s in suggestions])
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Suggestion failed: {str(e)}")
 
+# --- Health Check Endpoint ---
+@app.get("/health", summary="Check API health and loaded services")
+async def health_check():
+    """Check the health of the API and verify that all services are loaded"""
+    try:
+        health_status = {
+            "status": "healthy",
+            "services": {
+                "ir_engine": ir_engine_instance is not None,
+                "preprocessor": preprocessor_instance is not None,
+                "db_connector": db_connector_instance is not None,
+                "suggestion_services": {
+                    dataset: service is not None 
+                    for dataset, service in suggestion_services.items()
+                }
+            },
+            "loaded_datasets": list(suggestion_services.keys()),
+            "total_suggestion_services": len(suggestion_services)
+        }
+        
+        # Check if all critical services are loaded
+        all_services_loaded = all([
+            ir_engine_instance is not None,
+            preprocessor_instance is not None,
+            db_connector_instance is not None,
+            len(suggestion_services) > 0
+        ])
+        
+        if not all_services_loaded:
+            health_status["status"] = "degraded"
+            health_status["message"] = "Some services failed to load"
+        
+        return health_status
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error": str(e)
+        }
+
+# Startup event to initialize services
+@app.on_event("startup")
+async def startup_event():
+    """Initialize all services when the API starts"""
+    logging.info("Starting API initialization...")
+    initialize_services()
+    logging.info("API initialization complete")
+
 @app.on_event("shutdown")
 def shutdown_event():
-    db_connector.close()
+    """Clean up resources when the API shuts down"""
+    if db_connector_instance:
+        db_connector_instance.close()
+        logging.info("Database connection closed")
 
 # To run this FastAPI application:
 # 1. Save the code as api_main.py in your project's root directory.

@@ -64,8 +64,11 @@ class BM25_online(Retriever):
 
         results = []
 
-        # Display the results
+
         if BM25_online.with_index:
+            for elm in top_indices:
+                text = docs[elm[1]].text
+                results.append((docs[elm[1]].doc_id, scores[elm[0]], text))
             for elm in top_indices:
                 text = docs[elm[1]].text
                 results.append((docs[elm[1]].doc_id, scores[elm[0]], text))

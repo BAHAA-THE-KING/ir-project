@@ -44,7 +44,7 @@ class Embedding_online(Retriever):
             Embedding_online.__collection_instance__[dataset_name] = load_dataset(dataset_name)
         return Embedding_online.__collection_instance__[dataset_name]
 
-    def search(self, dataset_name: str, query: str, top_k: int = 10):
+    def search(self, dataset_name: str, query: str, top_k: int = 10,with_index: bool = False):
         if Embedding_online.with_index:
             return self.embedding_vectors_search(dataset_name, query, top_k)
         else:
@@ -59,12 +59,14 @@ class Embedding_online(Retriever):
         print("DEBUG: About to load docs with load_dataset")
         docs = load_dataset(dataset_name)
         processedQuery = TextPreprocessor.getInstance().preprocess_text(query)
-        query_embedding = model.encode(" ".join(processedQuery))
+        query_embedding = model.encode(" ".join(processedQuery), convert_to_tensor=True)
 
+         # Convert document_embeddings to tensor for cosine similarity calculation
+        doc_embeddings_tensor = torch.tensor(document_embeddings).to(query_embedding.device)
         cos_scores = util.cos_sim(query_embedding, doc_embeddings_tensor)[0]
         top_results = torch.topk(cos_scores, k=top_k)
         results = []
-        for score, idx in zip(top_results[0], top_results[1]):
+        for score, idx in zip(top_results.values, top_results.indices):
             doc_id = docs[idx].doc_id
             doc_text = docs[idx].text[:100] + "..."
             results.append((doc_id, score.item(), doc_text))
