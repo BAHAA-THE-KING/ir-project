@@ -10,8 +10,8 @@ from enum import Enum
 class SearchModel(Enum):
     TFIDF = "TF-IDF"
     BM25 = "BM25"
-    HYBRID = "Hybrid"
-    EMBEDDING = "Embedding"
+    HYBRID = "HYBRID"
+    EMBEDDING = "EMBEDDING"
 
 class ir_engine:
     def __init__(self):
@@ -74,7 +74,7 @@ class ir_engine:
         elif model_name == SearchModel.TFIDF.value:
             return TFIDF_online().search(dataset_name, query, top_k)
         elif model_name == SearchModel.EMBEDDING.value:
-            return Embedding_online().search(dataset_name, query, top_k, with_index=use_vector_store)
+            return Embedding_online().search(dataset_name, query, top_k)
         else:
             raise ValueError(f"Model {model_name} not supported for search.")
     
