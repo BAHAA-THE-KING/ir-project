@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Clock, FileText, ArrowLeft, ExternalLink, Database, CheckCircle, Box, Cpu, HardDrive } from 'lucide-react';
-import { useSearch } from '../context/SearchContext';
+import { SearchResult, useSearch } from '../context/SearchContext';
 
 const Results: React.FC = () => {
   const { searchState } = useSearch();
@@ -38,9 +38,9 @@ const Results: React.FC = () => {
     );
   };
 
-  const renderResultCard = (result: any, index: number) => (
+  const renderResultCard = (result: SearchResult, index: number) => (
     <div
-      key={result.id}
+      key={result.doc_id}
       className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/60 dark:border-slate-700/60 hover:border-slate-300/60 dark:hover:border-slate-600/60 transition-all duration-200 hover:shadow-lg"
     >
       <div className="flex items-start justify-between mb-3">
@@ -49,11 +49,8 @@ const Results: React.FC = () => {
             {index + 1}
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">
-              {result.title}
-            </h3>
             <div className="flex items-center space-x-2 text-sm text-slate-500 dark:text-slate-400">
-              <span>Document ID: {result.id}</span>
+              <span>Document ID: {result.doc_id}</span>
               <span>•</span>
               <span>Score: {result.score.toFixed(2)}</span>
               {searchState.useIndexing && (
@@ -73,7 +70,7 @@ const Results: React.FC = () => {
         </div>
         <div className="flex items-center space-x-2">
           <Link
-            to={`/document/${result.id}`}
+            to={`/document/${result.doc_id}`}
             className="inline-flex items-center space-x-1 px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-400 transition-colors duration-200 text-sm font-medium"
           >
             <ExternalLink className="w-3 h-3" />
