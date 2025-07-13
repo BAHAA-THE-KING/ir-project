@@ -203,16 +203,23 @@ async def perform_search(request: SearchRequest):
 
 # ✅ /document/{doc_id}
 @app.get("/document/{doc_id}", response_model=str, summary="Get full text content of a document")
-async def get_document_content(doc_id: str):
+async def get_document_content(doc_id: str, dataset_name: str):
     """
-    Retrieves the full text content of a document given its document ID.
+    Retrieves the full text content of a document given its document ID and dataset name.
     """
     try:
-        if ir_engine_instance is None:
-            raise HTTPException(status_code=500, detail="IR Engine not initialized")
-        document_text = ir_engine_instance.get_document(doc_id)
+        if db_connector_instance is None:
+            raise HTTPException(status_code=500, detail="Database connector not initialized")
+        
+        # Try to get the document from the database
+        document_text = db_connector_instance.get_document_text_by_id(doc_id, dataset_name, cleaned=False)
         if document_text is None:
-            raise HTTPException(status_code=404, detail=f"Document with ID '{doc_id}' not found.")
+            # Try cleaned version if raw not found
+            document_text = db_connector_instance.get_document_text_by_id(doc_id, dataset_name, cleaned=True)
+        
+        if document_text is None:
+            raise HTTPException(status_code=404, detail=f"Document with ID '{doc_id}' not found in dataset '{dataset_name}'.")
+        
         return document_text
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving document: {str(e)}")
