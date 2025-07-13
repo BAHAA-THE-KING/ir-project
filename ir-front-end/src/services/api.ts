@@ -12,7 +12,7 @@ export interface SearchRequest {
 
 export interface SearchResponse {
   results: Array<{
-    id: string;
+    doc_id: string;
     score: number;
     snippet: string;
   }>;
