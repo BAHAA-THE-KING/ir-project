@@ -66,18 +66,12 @@ class BM25_online(Retriever):
 
         # Display the results
         if BM25_online.with_index:
-            # Create a mapping from doc_id to doc for fast lookup
-            doc_id_to_doc = {doc.doc_id: doc for doc in docs}
-            for score_idx, doc_id_idx in top_indices:
-                doc_id = documents_sharing_terms_with_query[doc_id_idx]
-                doc = doc_id_to_doc.get(doc_id)
-                if doc is not None:
-                    text = doc.text
-                    results.append((doc.doc_id, scores[score_idx], text))
+            for elm in top_indices:
+                text = docs[elm[1]].text
+                results.append((docs[elm[1]].doc_id, scores[elm[0]], text))
         else:
             for idx in top_indices:
-                doc = docs[idx]
-                text = doc.text
-                results.append((doc.doc_id, scores[idx], text))
+                text = docs[idx].text
+                results.append((docs[idx].doc_id, scores[idx], text))
         
         return results
