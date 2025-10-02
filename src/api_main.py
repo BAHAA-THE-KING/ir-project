@@ -10,12 +10,12 @@ from pydantic import BaseModel
 from typing import List, Dict, Optional, Tuple
 import time
 import httpx
-from services.processing.text_preprocessor import TextPreprocessor
-from ir_engine import ir_engine, SearchModel
-from config import DATASETS
+from src.services.processing.text_preprocessor import TextPreprocessor
+from src.ir_engine import ir_engine, SearchModel
+from src.config import DATASETS
 
-from services.query_suggestion_service import QuerySuggestionService
-from database.db_connector import DBConnector
+from src.services.query_suggestion_service import QuerySuggestionService
+from src.database.db_connector import DBConnector
 from fastapi import Request
 import logging
 
@@ -72,6 +72,8 @@ def initialize_services():
         logging.error(f"Failed to initialize database connector: {e}")
         logging.warning("Database connector initialization failed - some features may be limited")
         db_connector_instance = None
+        
+    
 
     # Load all docs for each dataset ONCE
     class DocObj:
@@ -100,7 +102,7 @@ def initialize_services():
                 logging.warning(f"Skipping QuerySuggestionService for dataset '{dataset}' - database connector not available")
                 continue
             start_time = time.time()
-            suggestion_services[dataset] = QuerySuggestionService(dataset, preprocessor_instance, db_connector_instance)
+            # suggestion_services[dataset] = QuerySuggestionService(dataset, preprocessor_instance, db_connector_instance)
             load_time = time.time() - start_time
             logging.info(f"Loaded QuerySuggestionService for dataset '{dataset}' in {load_time:.2f} seconds")
         except Exception as e:

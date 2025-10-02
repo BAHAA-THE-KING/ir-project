@@ -18,7 +18,6 @@ class Embedding_online(Retriever):
     __embeddingInstance__ : dict[str, object] = {}
     __collection_instance__: dict = {}
     __modelInstance__ = None
-    __modelInstance__ = None
     __docs__: dict = {}
 
     def __init__(self, db_connector, docs):
@@ -29,7 +28,7 @@ class Embedding_online(Retriever):
     def __loadModelInstance__():
         if Embedding_online.__modelInstance__ == None:
           
-            Embedding_online.__modelInstance__ = SentenceTransformer("all-MiniLM-L6-v2") 
+            Embedding_online.__modelInstance__ = SentenceTransformer("data/models/all-MiniLM-L6-v2") 
         return Embedding_online.__modelInstance__
 
     @staticmethod

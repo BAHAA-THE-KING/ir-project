@@ -9,6 +9,7 @@ export const API_CONFIG = {
     DOCUMENTS: '/documents',
     HEALTH: '/health',
     DATASETS: '/datasets',
+    SUGGEST: '/suggest',
   },
   
   // Request timeout in milliseconds

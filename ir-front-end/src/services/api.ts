@@ -28,6 +28,21 @@ export interface Document {
   metadata?: Record<string, unknown>;
 }
 
+export interface SuggestRequest {
+  query: string;
+  dataset: string;
+  top_k: number;
+}
+
+export interface Suggestion {
+  suggestion: string;
+  snippet: string;
+}
+
+export interface SuggestResponse {
+  suggestions: Suggestion[];
+}
+
 // Search API
 export const searchDocuments = async (searchRequest: SearchRequest): Promise<SearchResponse> => {
   const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.SEARCH), {
@@ -76,4 +91,23 @@ export const getDatasetInfo = async (): Promise<Record<string, unknown>> => {
   }
 
   return response.json();
+};
+
+export const fetchSuggestions = async (
+  suggestRequest: SuggestRequest
+): Promise<Suggestion[]> => {
+  const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.SUGGEST), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(suggestRequest),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Suggestion fetch failed: ${response.statusText}`);
+  }
+
+  const data: SuggestResponse = await response.json();
+  return data.suggestions;
 }; 

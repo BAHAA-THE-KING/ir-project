@@ -54,6 +54,22 @@ class DBConnector:
         if results:
             return results[0][0]
         return None
+    def get_documents_by_ids(self, ids: List[int], dataset_name: str, cleaned: bool = False) -> List[Tuple[int, str, str]]:
+        """
+        Retrieve multiple documents' doc_id and text by a list of integer primary key IDs.
+        :param ids: List of integer IDs (primary key).
+        :param dataset_name: Dataset name (e.g., 'antique', 'quora').
+        :param cleaned: If True, retrieve cleaned text; otherwise, retrieve original text.
+        :return: List of (id, doc_id, text) tuples for found documents.
+        """
+        if not ids:
+            return []
+        table_name = f"{dataset_name}_cleaned" if cleaned else f"{dataset_name}_raw"
+        placeholders = ','.join(['?'] * len(ids))
+        query = f"SELECT id, doc_id, text FROM {table_name} WHERE id IN ({placeholders})"
+        results = self._execute_query(query, tuple(ids))
+        return results
+
 
     def get_all_document_ids_and_texts(self, dataset_name: str, cleaned: bool = False, sample_ratio: float = 1.0, limit: Optional[int] = None) -> List[Tuple[str, str]]:
         """
@@ -82,8 +98,7 @@ class DBConnector:
         
         print(f"Fetching {fetch_limit} documents (sample_ratio={sample_ratio}, limit={limit}) from {table_name}...")
         return self._execute_query(query)
-
-
+    
 
     def get_doc_id_by_id(self, dataset_name: str, id_value: int, cleaned: bool = False) -> Optional[str]:
         """

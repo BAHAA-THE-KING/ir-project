@@ -5,8 +5,6 @@ from src.loader import load_dataset, Doc
 from src.services.online_vectorizers.inverted_index import InvertedIndex
 from src.services.processing.text_preprocessor import TextPreprocessor
 from src.services.online_vectorizers.Retriever import Retriever
-from src.database.db_connector import DBConnector
-import os
 
 class BM25_online(Retriever):
     __bm25instance__ : dict[str, BM25Okapi] = {}

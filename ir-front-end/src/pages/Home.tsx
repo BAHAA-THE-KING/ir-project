@@ -15,6 +15,7 @@ import {
   Clock,
 } from "lucide-react";
 import { useSearch, SearchAlgorithm, Dataset } from "../context/SearchContext";
+import { fetchSuggestions, Suggestion } from "../services/api";
 
 const Home: React.FC = () => {
   const [query, setQuery] = useState("");
@@ -27,7 +28,8 @@ const Home: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isDatasetDropdownOpen, setIsDatasetDropdownOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
   const { performSearch } = useSearch();
   const navigate = useNavigate();
 
@@ -40,42 +42,40 @@ const Home: React.FC = () => {
     );
   }, [resultCount]);
 
-  // Query suggestions
-  const allSuggestions = [
-    "machine learning algorithms",
-    "deep learning neural networks",
-    "natural language processing",
-    "computer vision applications",
-    "reinforcement learning",
-    "artificial intelligence",
-    "supervised learning",
-    "unsupervised learning",
-    "convolutional neural networks",
-    "transformer models",
-    "image recognition",
-    "text classification",
-    "recommendation systems",
-    "data mining techniques",
-    "pattern recognition",
-  ];
-
-  // Filter suggestions based on query
+  // Fetch suggestions from API
   useEffect(() => {
-    if (query.trim().length > 0 && useQuerySuggestions) {
-      const filtered = allSuggestions
-        .filter(
-          (suggestion) =>
-            suggestion.toLowerCase().includes(query.toLowerCase()) &&
-            suggestion.toLowerCase() !== query.toLowerCase()
-        )
-        .slice(0, 5);
-      setSuggestions(filtered);
-      setShowSuggestions(filtered.length > 0);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  }, [query]);
+    let active = true;
+    const getSuggestions = async () => {
+      if (query.trim().length > 0 && useQuerySuggestions) {
+        setIsSuggestionsLoading(true);
+        try {
+          const apiSuggestions = await fetchSuggestions({
+            query,
+            dataset,
+            top_k: 10,
+          });
+          if (active) {
+            setSuggestions(apiSuggestions);
+            setShowSuggestions(apiSuggestions.length > 0);
+          }
+        } catch (e) {
+          if (active) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+          }
+        } finally {
+          if (active) setIsSuggestionsLoading(false);
+        }
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    };
+    getSuggestions();
+    return () => {
+      active = false;
+    };
+  }, [query, dataset, useQuerySuggestions]);
 
   // Handle algorithm-specific option constraints
   useEffect(() => {
@@ -229,28 +229,30 @@ const Home: React.FC = () => {
             />
 
             {/* Query Suggestions */}
-            {showSuggestions &&
-              suggestions.length > 0 &&
-              useQuerySuggestions && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md border border-slate-200 dark:border-slate-600 rounded-2xl shadow-xl z-50 overflow-hidden">
-                  {suggestions.map((suggestion, index) => (
+            {showSuggestions && suggestions.length > 0 && useQuerySuggestions && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md border border-slate-200 dark:border-slate-600 rounded-2xl shadow-xl z-50 overflow-hidden">
+                {isSuggestionsLoading ? (
+                  <div className="px-4 py-3 text-slate-500 dark:text-slate-400">Loading suggestions...</div>
+                ) : (
+                  suggestions.map((s, index) => (
                     <button
                       key={index}
                       type="button"
-                      onClick={() => handleSuggestionClick(suggestion)}
+                      onClick={() => handleSuggestionClick(s.suggestion)}
                       className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all duration-200 text-slate-900 dark:text-slate-100"
                     >
                       <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-500 dark:to-indigo-500 rounded-lg flex items-center justify-center">
                         <Search className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1">
-                        <div className="font-medium">{suggestion}</div>
+                        <div className="font-medium">{s.suggestion}</div>
                       </div>
                       <Clock className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                     </button>
-                  ))}
-                </div>
-              )}
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           {/* Dataset Selection */}

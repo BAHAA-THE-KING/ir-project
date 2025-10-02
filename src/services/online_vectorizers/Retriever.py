@@ -1,5 +1,5 @@
 import math
-from services.processing.text_preprocessor import TextPreprocessor
+from src.services.processing.text_preprocessor import TextPreprocessor
 
 def calc_dcg(relevance, rank):
     return ((2 ** relevance) - 1) / math.log2(rank + 1)
